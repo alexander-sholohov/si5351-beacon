@@ -1,0 +1,488 @@
+<html>
+
+<!-- 
+ Si5351 calculator for arduino beacon
+ Developed by Alexander Sholohov <ra9yer@yahoo.com>
+
+ License: MIT 
+-->
+
+<head>
+
+<style type="text/css">
+
+body {
+    margin: 20px;
+}
+
+/*
+input[disabled], input[disabled]:hover {
+    background-color: #cccccc;
+}
+*/
+
+div.topInfo1 {
+    margin:20px;
+    padding-left:50px;
+    text-decoration: underline;
+}
+
+div.topInfo2 {
+    margin:20px;
+    padding-left:50px;
+}
+
+
+table.mainTable {
+    border:0px solid black;
+    border-collapse: separate;
+    border-spacing:0.3em;
+}
+
+.mainTable td {
+    padding-top:1em;
+}
+
+
+table.selftestResultTable {
+    border:1px solid black;
+    border-collapse: collapse;
+    //border-spacing:1.5em;
+}
+
+.selftestResultTable td
+{
+    border: 1px solid black;
+    padding: 0.2em;
+}
+
+div.blockCaption {
+    padding-top: 30px;
+    padding-bottom: 5px;
+}
+
+div.wrongInfo {
+    color: red;
+}
+
+
+</style>
+
+
+<script type="text/javascript">
+
+var ff = (function() {
+'use strict';
+
+function $(id) {
+  if (typeof id == 'string') {
+    return document.getElementById(id);
+  }
+  return id;
+}
+
+//-----------------------------------------------------------------------------------------------------------
+function onUpdate()
+{
+    var f = parseFloat( $("xtal_mark").value );
+    var ppm = parseFloat( $("xtal_ppm").value );
+    var xtal_result = f + f * ppm / 1000000.0;
+    $("xtal_result").innerHTML = xtal_result;
+
+    var base_freq = parseFloat( $("base_freq").value );
+
+    var msync_div = 900000000.0 / base_freq;
+    var r_div = 1;
+    var isOk = true;
+
+    if( $("radio_r_auto").checked )
+    {
+        while(msync_div>900)
+        {
+            r_div = r_div * 2;
+            msync_div = msync_div / 2;
+        }
+
+        msync_div = Math.floor(msync_div);
+        if( msync_div % 2)
+            msync_div--;
+
+
+        $("r_div").value = r_div;
+        $("msync_div").value = msync_div;
+    }
+
+    // get values back
+    msync_div = parseInt( $("msync_div").value );
+    if( msync_div < 4 || msync_div > 900 || (msync_div % 2) == 1  )
+    {
+        $("msg_msync_div").innerHTML = "Msync div should be even integer in range [4,6,8...900]";
+        isOk = false;
+    }
+    else
+    {
+        $("msg_msync_div").innerHTML = "";
+    }
+
+
+    r_div = parseInt( $("r_div").value );
+
+    if( r_div!=1 && r_div!=2 && r_div!=4 && r_div!=8 && r_div!=16 && r_div!=32 && r_div!=64 && r_div!=128  )
+    {
+        $("msg_r_div").innerHTML = "R div should be power of two (1,2,4,8,16,32,64,128)";
+        isOk = false;
+    }
+    else
+    {
+        $("msg_r_div").innerHTML = "";
+    }
+
+    var f_vco = base_freq * msync_div * r_div;
+    $("f_vco").innerHTML = f_vco.toLocaleString();
+    if( f_vco < 600000000 || f_vco > 900000000 )
+    {
+        $("msg_f_vco").innerHTML = "VCO frequency should be in range [600M ... 900M]";
+    }
+    else
+    {
+        $("msg_f_vco").innerHTML = "";
+    }
+
+    var desired_step = parseFloat( $("v_desired_step").value );
+
+    var v_a = Math.floor( f_vco / xtal_result );
+
+    if( v_a < 15 || v_a > 90 )
+    {
+        isOk = false;
+        $("msg_v_a").innerHTML = "pll.a should be in range [15 ... 90]";
+    }
+    else
+    {
+        $("msg_v_a").innerHTML = "";
+    }
+
+    var v_c = Math.floor( xtal_result / desired_step / msync_div / r_div );
+    if( v_c == 0 || v_c > 1048575 )
+    {
+        isOk = false;
+        $("msg_v_c").innerHTML = "pll.c should be in range [1 ... 1048575]";
+    }
+    else
+    {
+        $("msg_v_c").innerHTML = "";
+    }
+
+
+    var v_b = Math.floor( v_c * (f_vco / xtal_result - v_a) );
+
+    var actaul_step = xtal_result / msync_div / r_div / v_c;
+
+
+    $("v_a").innerHTML = v_a.toLocaleString();;
+    $("v_b").innerHTML = v_b.toLocaleString();;
+    $("v_c").innerHTML = v_c.toLocaleString();;
+
+    
+    if( isOk )
+    {
+        $("v_step").innerHTML = Number((actaul_step).toFixed(6)); 
+    }
+    else
+    {
+        $("v_step").innerHTML = "";     
+    }
+
+
+    // ----- baud rate -------
+    var v_baud_rate_result = parseInt( $("v_baud_rate_divident").value ) * 1000.0 / parseInt( $("v_baud_rate_divisor").value ) ;
+    $("v_baud_rate_result").innerHTML = Number((v_baud_rate_result).toFixed(3)); 
+
+    // ------ T/R interval
+    var v_tr_interval = parseInt( $("v_tr_interval_seconds").value ) / 60.0;
+    $("v_tr_interval_minutes").innerHTML = Number( v_tr_interval.toFixed(2) ); 
+    
+    
+
+    // -----   Self test result  --------
+    var res_f0 = calcFreq(xtal_result, v_a, v_b + 0, v_c, r_div, msync_div);
+    var res_f1 = calcFreq(xtal_result, v_a, v_b + 1, v_c, r_div, msync_div);
+    var res_f2 = calcFreq(xtal_result, v_a, v_b + 2, v_c, r_div, msync_div);
+    var res_f3 = calcFreq(xtal_result, v_a, v_b + 3, v_c, r_div, msync_div);
+    $("res_f0").innerHTML = Number(res_f0.toFixed(4)); 
+    $("res_f1").innerHTML = Number(res_f1.toFixed(4)); 
+    $("res_f2").innerHTML = Number(res_f2.toFixed(4)); 
+    $("res_f3").innerHTML = Number(res_f3.toFixed(4)); 
+
+    $("res_diff1").innerHTML = Number( (res_f1 - res_f0).toFixed(4)); 
+    $("res_diff2").innerHTML = Number( (res_f2 - res_f1).toFixed(4)); 
+    $("res_diff3").innerHTML = Number( (res_f3 - res_f2).toFixed(4)); 
+
+
+    // -----  Generated code  --------
+    var s = "";
+    if( isOk )
+    {
+        s += "{";
+
+        var row = getModeRowByValue($("s_workin_mode").value);
+        if( row != null )
+        {
+            s += row[5] ;
+        }
+        else
+        {
+            s += "Mode_Unknown"
+        }
+
+
+        s += ", ";
+        s += v_a + ", ";
+        s += v_b + ", ";
+        s += v_c + ", ";
+        s += msync_div + ", ";
+        s += r_div  + ", "
+        s += parseInt( $("v_baud_rate_divident").value ) + ", "
+        s += parseInt( $("v_baud_rate_divisor").value ) + ", "
+        s += parseInt( $("v_tr_interval_seconds").value ) 
+        s += "} ";
+
+        s += "// f=" + Number( (base_freq / 1000000.0).toFixed(6)) + " MHz"; 
+        if( row != null )
+        {
+            s += "; " + row[6] ;
+        }
+        s += "; step=" + Number((actaul_step).toFixed(3)) + "Hz"; 
+        s += "; " + Number((v_baud_rate_result).toFixed(3)) + "baud"; 
+        s += "; T/R=" + Number( v_tr_interval.toFixed(1) ) + "m"; 
+ 
+    }
+    else
+    {
+        s = "no valid info";
+    }
+    $("generated_code").value = s;
+
+}
+
+
+//-----------------------------------------------------------------------------------------------------------
+function calcFreq(xtal, a, b, c, r_div, msync_div)
+{
+    var f = Math.floor(128*b/c);
+    var p1 = 128*a + f - 512;
+    if( p1 <=0 || p1 > 262143)
+    {
+        return 0;
+    }
+
+    var p2 = 128*b - c*f;
+    if( p2 < 0 || p2 > 1048575 )
+    {
+        return 0;
+    }
+
+    if( c > 1048575 )
+    {
+        return 0;
+    }
+
+    var res = xtal * (a + parseFloat(b)/c) / r_div / msync_div;
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------------------------------------
+function getModeRowByValue(v)
+{
+    var arr = [ ['1', '1.4648', '12', '8192', '120', 'Mode_WSPR2', 'WSPR2'], //   
+                ['2', '0.1831', '12', '65536', '900', 'Mode_WSPR15', 'WSPR15'], //  
+                ['3', '2.6915', '441', '163840', '60', 'Mode_JT65_A', 'JT65A'], //   
+                ['4', '5.3833', '441', '163840', '60', 'Mode_JT65_B', 'JT65B'], //   
+                ['5', '10.7666', '441', '163840', '60', 'Mode_JT65_C', 'JT65C'], //  
+                ['6', '5.3833', '441', '81920', '30', 'Mode_JT65_B2', 'JT65B2'],  // 
+                ['7', '10.7666', '441', '81920', '30', 'Mode_JT65_C2', 'JT65C2'], // 
+
+                ['8', '1.7361', '12', '6912', '60', 'Mode_JT9_1', 'JT9-1'], //   
+                ['9', '0.7813', '12', '15360', '120', 'Mode_JT9_2', 'JT9-2'], //   
+                ['10', '0.2930', '12', '40960', '300', 'Mode_JT9_5', 'JT9-5'], //  
+                ['11', '0.1447', '12', '82944', '600', 'Mode_JT9_10', 'JT9-10'], // 
+                ['12', '0.0476', '12', '252000', '1800', 'Mode_JT9_30', 'JT9-30'], // 
+
+                ['13', '4.375', '441', '100800', '60', 'Mode_JT4_A', 'JT4A'], // 
+                ['14', '8.75', '441', '100800', '60', 'Mode_JT4_B', 'JT4B'], // 
+                ['15', '17.5', '441', '100800', '60', 'Mode_JT4_C', 'JT4C'], // 
+                ['16', '39.375', '441', '100800', '60', 'Mode_JT4_D', 'JT4D'], // 
+                ['17', '78.75', '441', '100800', '60', 'Mode_JT4_E', 'JT4E'], // 
+                ['18', '157.5', '441', '100800', '60', 'Mode_JT4_F', 'JT4F'], // 
+                ['19', '315.0', '441', '100800', '60', 'Mode_JT4_G', 'JT4G'], // 
+
+                ['20', '21.533', '441', '20480', '30', 'Mode_JT6M', 'JT6M'], // 
+                ['21', '21.533', '441', '20480', '15', 'Mode_ISCAT_A', 'ISCAT-A'], // 
+                ['22', '43.066', '441', '10240', '15', 'Mode_ISCAT_B', 'ISCAT-B'], // 
+
+                ['0', '0']  ];
+
+
+    for( var i=0; i<arr.length; i++ )
+    {
+        if( v == arr[i][0] )
+        {
+            return arr[i];
+        }
+    }
+
+    return null;
+}
+
+//-----------------------------------------------------------------------------------------------------------
+function onWorkingModeChanged()
+{
+    var v = $("s_workin_mode").value;
+    var row = getModeRowByValue(v);
+
+    if( v == 'manual' || row == null )
+    {
+        $("v_desired_step").disabled = false;
+        $("v_baud_rate_divident").disabled = false;
+        $("v_baud_rate_divisor").disabled = false;
+        $("v_tr_interval_seconds").disabled = false;
+        
+    }
+    else
+    {
+        $("v_desired_step").disabled = true;
+        $("v_baud_rate_divident").disabled = true;
+        $("v_baud_rate_divisor").disabled = true;
+        $("v_tr_interval_seconds").disabled = true;
+
+        $("v_desired_step").value = row[1];  
+        $("v_baud_rate_divident").value = row[2];
+        $("v_baud_rate_divisor").value = row[3];
+        $("v_tr_interval_seconds").value = row[4];
+    }
+
+    onUpdate();
+
+}
+
+//-----------------------------------------------------------------------------------------------------------
+function onBodyLoad()
+{
+    onRadioDivClicked();
+    onWorkingModeChanged();
+    onUpdate();
+}
+
+//-----------------------------------------------------------------------------------------------------------
+function onKeyPress(e) {
+    if (e.keyCode == 13) {
+        onUpdate();
+        return false;
+    }
+}
+
+//-----------------------------------------------------------------------------------------------------------
+function onRadioDivClicked()
+{
+    if( $("radio_r_auto").checked )
+    {
+        $("r_div").disabled = true;
+        $("msync_div").disabled = true;
+    }
+    else
+    {
+        $("r_div").disabled = false;   
+        $("msync_div").disabled = false;
+    }
+
+    onUpdate();
+}
+
+
+
+ return {
+    onBodyLoad: function() {
+      onBodyLoad();
+    },
+    onUpdate: function() {
+      onUpdate();
+    },
+    onWorkingModeChanged: function() {
+      onWorkingModeChanged();
+    },
+    onRadioDivClicked: function() {
+      onRadioDivClicked();
+    },
+    onKeyPress: function(e) {
+      onKeyPress(e);
+    }
+  }; 
+
+}) ();
+
+
+</script>
+
+</head>
+
+<body onload="ff.onBodyLoad()" >
+    <div class="topInfo1" ><h3>si5351 configurator for Arduino-based multimode beacon.</h3></div>
+    <div class="topInfo2" >Author: Alexander RA9YER</div>
+    <table class="mainTable" id="idMainTable">
+        <tr><td>XTAL (Hz)</td><td><input id="xtal_mark" onblur="ff.onUpdate()" onkeypress="return ff.onKeyPress(event)" type="text" size="40" value="27000000"/></td> <td></td> </tr>
+        <tr><td>XTAL error (ppm)</td><td><input id="xtal_ppm" onblur="ff.onUpdate()" onkeypress="return ff.onKeyPress(event)" type="text" size="40" value="0"/></td> <td></td> </tr>
+        <tr><td>XTAL result (Hz)</td><td><div id="xtal_result">dummy</div></td> <td></td> </tr>
+        <tr><td>Base frequency (Hz)</td><td><input id="base_freq" onblur="ff.onUpdate()" onkeypress="return ff.onKeyPress(event)" type="text" size="40" value="28126000.0"/></td> <td></td> </tr>
+        <tr><td>Select working mode</td><td> 
+            <select id="s_workin_mode" onchange="ff.onWorkingModeChanged()">
+  <option value='1'>WSPR2</option>
+  <option value='2'>WSPR15</option>
+  <option value='3'>JT65A</option>
+  <option value='4'>JT65B</option>
+  <option value='5'>JT65C</option>
+  <option value='6'>JT65B2</option>
+  <option value='7'>JT65C2</option>
+  <option value='8'>JT9-1</option>
+  <option value='9'>JT9-2</option>
+  <option value='10'>JT9-5</option>
+  <option value='11'>JT9-10</option>
+  <option value='12'>JT9-30</option>
+  <option value='13'>JT4A</option>
+  <option value='14'>JT4B</option>
+  <option value='15'>JT4C</option>
+  <option value='16'>JT4D</option>
+  <option value='17'>JT4E</option>
+  <option value='18'>JT4F</option>
+  <option value='19'>JT4G</option>
+  <option value='20'>JT6M</option>
+  <option value='21'>ISCAT-A</option>
+  <option value='22'>ISCAT-B</option>
+  <option value='manual'>manual</option>
+</select> </td> <td></td></tr>
+        <tr><td>Desired step (Hz)</td><td><input id="v_desired_step" onblur="ff.onUpdate()" onkeypress="return ff.onKeyPress(event)" type="text" size="16" value="1.46"/></td> <td></td> </tr>
+        <tr><td>Msync/R control</td> <td><input id="radio_r_auto" type="radio" name="group1" onclick="ff.onRadioDivClicked()" value="Auto" checked>Auto<input type="radio" name="group1" onclick="ff.onRadioDivClicked()" value="Manual">Manual </td><td></td></tr>
+        <tr><td>R div</td><td><input id="r_div" onblur="ff.onUpdate()" onkeypress="return ff.onKeyPress(event)" type="text" size="40" value="1" disabled/></td> <td><div class="wrongInfo" id="msg_r_div"></div></td> </tr>
+        <tr><td>Msync div</td><td><input id="msync_div" onblur="ff.onUpdate()" onkeypress="return ff.onKeyPress(event)" type="text" size="40" value="1" disabled/></td> <td><div class="wrongInfo" id="msg_msync_div"></div></td> </tr>
+        <tr><td>F VCO (Hz)</td><td><div id="f_vco">dummy</div></td> <td><div class="wrongInfo" id="msg_f_vco"></div></td> </tr>
+        <tr><td>a</td><td><div id="v_a">dummy</div></td> <td><div class="wrongInfo" id="msg_v_a"></div></td> </tr>
+        <tr><td>b</td><td><div id="v_b">dummy</div></td> <td></td> </tr>
+        <tr><td>c</td><td><div id="v_c">dummy</div></td> <td><div class="wrongInfo" id="msg_v_c"></div></td> </tr>
+        <tr><td>Actual step (Hz)</td><td><div id="v_step">dummy</div></td> <td></td> </tr>
+        <tr><td>Baud rate</td><td><input id="v_baud_rate_divident" onblur="ff.onUpdate()" onkeypress="return ff.onKeyPress(event)" type="text" size="6" value="12"/> x 1000 / <input id="v_baud_rate_divisor" onblur="ff.onUpdate()" onkeypress="return onKeyPress(event)" type="text" size="6" value="8192"/> = <span id="v_baud_rate_result">dummy</span> baud</td> <td></td> </tr>
+        <tr><td>T/R interval </td><td> <input id="v_tr_interval_seconds" onblur="ff.onUpdate()" onkeypress="return ff.onKeyPress(event)" type="text" size="6" value="120"/> seconds = <span id="v_tr_interval_minutes">dummy</span> minute(s)</td> <td></td> </tr>
+    </table>
+
+
+    <div class="blockCaption" >Self test result:</div>
+    <table class="selftestResultTable" id="idSelftestResultTable">
+        <tr><td>n:</td> <td>0 (Base freq)</td> <td>1</td> <td>2</td> <td>3</td> </tr>
+        <tr><td>Fn (Hz):</td> <td> <div id="res_f0">0</div> </td> <td><div id="res_f1">0</div></td> <td><div id="res_f2">0</div></td> <td><div id="res_f3">0</div></td> </tr>
+        <tr><td>Diff (Hz):</td> <td></td> <td><div id="res_diff1">0</div></td> <td><div id="res_diff2">0</div></td> <td><div id="res_diff3">0</div></td> </tr>
+    </table>
+
+    <div class="blockCaption" >Generated code. Copy the text below and paste into arduino code.</div>
+    <input id="generated_code" type="text" size="90" value="dummy" />
+
+</body>
+</html>
