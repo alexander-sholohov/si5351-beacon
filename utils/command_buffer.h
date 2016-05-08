@@ -27,7 +27,7 @@ public:
     const char *getInternalBuffer() const;
     size_t length() const;
 
-    const char *getNextToken(char *separators);
+    const char *getNextToken(const char *separators);
 
 private:
     size_t m_tail;

@@ -130,7 +130,7 @@ uint32_t JTWSPREncoder::packcall( const char* callsign ) const
     if( len > 6 )
         return false;
 
-    uint32_t nbase = 37*36*10*27*27*27;
+    uint32_t nbase = (uint32_t)37 * 36 * 10 * 27 * 27 * 27;
 
     char lcallsign[7];
     memset(lcallsign, ' ', 6);

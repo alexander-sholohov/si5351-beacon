@@ -99,7 +99,7 @@ size_t CCommandBuffer::length() const
 }
 
 //--------------------------------------------------------------
-const char *CCommandBuffer::getNextToken(char *separators)
+const char *CCommandBuffer::getNextToken(const char *separators)
 {
 
     size_t pos = m_token_tail;
