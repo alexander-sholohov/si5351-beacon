@@ -21,7 +21,7 @@ Key features:
 
 To configure base frequency, step of FSK manipulation, T/R interval, mode - please use javascript based configurator: http://ra9yer.blogspot.com/p/si5351-configurator.html or open local configurator : ./doc/band_configurator.html 
 
-The WSPR beacon message in defined directly  in the code in text form. Please use command line utilities _jt65code_, _jt4code_,  _jt9code_ to generate symbol stream for these modes.
+The WSPR beacon message in defined directly  in the code in text form. Please use command-line utilities _jt65code_, _jt4code_,  _jt9code_ to generate symbol stream for these modes.
 
 Terminal commands:
 
@@ -51,9 +51,9 @@ Command `setdate` - in-chip datetime will be updated as soon as you hit enter.
 After downloading, rename folder to 'si5351-beacon'. It is arduino obligatory, the folder name should have the same name as *.ino file has.
 
 
-Si5351 module, arduio-shield, LPF's, relay-switched board was purchased from http://www.qrp-labs.com
-Ds3231 module - from aliexpress.
-Arduino Leonardo - from local shop.
+Si5351 module, arduio-shield, LPF's, relay-switched board was purchased from http://www.qrp-labs.com  
+Ds3231 module - from aliexpress.  
+Arduino Leonardo - from local shop.  
 
 Link to blog post: http://ra9yer.blogspot.com/2016/05/arduino-si5351-beacon.html
 
