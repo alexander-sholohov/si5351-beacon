@@ -70,10 +70,11 @@ struct LPF_Band_Matching
 
 // ---- Arduino pin configuration ---
 
-const int pinLED = LED_BUILTIN; // out
-const int pin1PPS = 4;
+const int pinLED = LED_BUILTIN; // duplicate 1pps
+const int pin1PPS = 4; // <-- 1pps signal from ds3231
 
 
+// Active LOW relay pins as on QRP-LABS relay-switched LPF kit
 const int pinBAND0 = 7;
 const int pinBAND1 = A0;
 const int pinBAND2 = 10;
@@ -84,11 +85,11 @@ const int pinBAND5 = A3;
 
 // ----- Configure mapping: RF_Band -> Relay_switch_board_LPF  -----
 LPF_Band_Matching relaySwitchBandMatching [] = { 
-  {RF_Band_160m, FILTER_BAND_1},
-  {RF_Band_40m, FILTER_BAND_2},
+  {RF_Band_40m, FILTER_BAND_5},
   {RF_Band_30m, FILTER_BAND_3},
-  {RF_Band_20m, FILTER_BAND_4},
-  {RF_Band_15m, FILTER_BAND_5}
+  {RF_Band_20m, FILTER_BAND_2},
+  {RF_Band_15m, FILTER_BAND_1},
+  {RF_Band_15m, FILTER_BAND_1}
   
 };
 
@@ -98,11 +99,11 @@ const FilterBand DefaultFilterBand = FILTER_BAND_0; // default band if none of r
 
 const int PTTWarmupTimeInSeconds = 2; // Number of seconds prior symbols transmission. It is for activate PTT of Power Amplifer.
 const unsigned TRIntervalMultiplier = 1; // for example: value 1 means TR-TR-TR...   value 3 means: TX-RX-RX-TX...
-bool WorkModeActive = false; // active TX logic at power on
-bool BandHoppingEnabled = true; // band hopping control
+bool WorkModeActive = true; // active TX logic at power-on
+bool BandHoppingEnabled = true; // band hopping state at power-on
 
 // ------------- Predefined messages JT65,JT9,JT4
-// "HELLO WORLD" encodede message. Please replace to your own.
+// "HELLO WORLD" encoded message. Please replace to your own.
 const PROGMEM unsigned char MSG_JT65[] = {29,23,60,48,34,6,39,9,23,26,55,15,47,12,16,42,11,25,63,63,9,10,60,0,46,21,15,54,54,62,51,48,39,20,56,25,15,62,52,36,3,4,41,13,59,10,41,63,43,39,15,19,32,33,53,25,60,62,4,55,26,42,48};
 const PROGMEM unsigned char MSG_JT9[] = {0,0,3,6,0,7,3,4,7,0,7,3,2,4,8,0,3,2,4,1,6,1,0,5,8,2,2,4,4,2,5,3,0,8,0,4,7,3,7,6,3,4,4,5,3,2,4,3,7,2,0,0,1,2,0,5,5,2,5,0,2,4,8,3,2,0,2,1,3,8,1,8,0,2,2,8,3,1,7,8,1,2,0,1,0};
 const PROGMEM unsigned char MSG_JT4[] = {};
@@ -110,22 +111,21 @@ const PROGMEM unsigned char MSG_JT4[] = {};
 
 //---------- Begin Band Configuration  ----------------------
 
-size_t currentBandIndex = 0; // <--- Startup band index in the array below (zero-based)
+size_t currentBandIndex = 0; // <--- Band index at power-on in the array below (zero-based)
 
 //
 // Copy vector-descriptor from web configurator and paste into bandDescrArray.
 // Local configurator:  ./doc/band_configurator.html 
 // Configurator in the Net:  http://ra9yer.blogspot.com/p/si5351-configurator.html
 //
+
 JTBandDescr bandDescrArray[] = {
     {Mode_JT65_B, 32, 28943, 836045, 6, 1, 441, 163840, 60} // f=144.1777 MHz; JT65B; step=5.383Hz; 2.692baud; T/R=1m
-  , {Mode_WSPR2, 31, 154287, 614418, 30, 1, 12, 8192, 120} // f=28.126 MHz; WSPR2; step=1.465Hz; 1.465baud; T/R=2m
-
-};
+  , {Mode_WSPR2, 31, 154287, 614418, 30, 1, 12, 8192, 120} // f=28.126 MHz; WSPR2; step=1.465Hz; 1.465baud; T/R=2m};
 
 //----------  End Configuration ------------------------
 
-const size_t numBandsTotal = sizeof(bandDescrArray) / sizeof(bandDescrArray[0]); // Auto calc number of bands. Used for band hopping.
+const size_t NumBandsTotal = sizeof(bandDescrArray) / sizeof(bandDescrArray[0]); // Calc number of bands at compile time. Used for band hopping.
 
 
 // ------ Message initialize functions ----- 
@@ -195,7 +195,7 @@ void setup() {
   initializeJT9Coder();
   initializeJT4Coder();
 
-  currentBandIndex = (currentBandIndex < numBandsTotal)? currentBandIndex : 0;
+  currentBandIndex = (currentBandIndex < NumBandsTotal)? currentBandIndex : 0;
   bandParams.initFromJTBandDescr( bandDescrArray[currentBandIndex] ); 
   printBandInfo();
 
@@ -373,6 +373,7 @@ void processTerminalCommands()
   {
     if( currentState != stateTransmitting )
     {
+      activate_ptt();
       start_tx();
     }
     else
@@ -456,23 +457,22 @@ void printTime(bool includeLaunchTime)
 
   RtcDatetime time;
   Ds3231::getTime(time);
-  Serial.print("\nCurrent DateTime = ");
+  Serial.print(F("\nClock  DateTime = "));
   time.formatStr(buf);
   Serial.print(buf);
-  Serial.print("\n");
 
   if( includeLaunchTime )
   {
-    Serial.print("dataStartTime = ");
-    symbolsStartTime.formatStr(buf);
-    Serial.print(buf);
-  
-    Serial.print("\npttStartTime = ");
+    Serial.print(F("\nPTT    DateTime = "));
     pttStartTime.formatStr(buf);
     Serial.print(buf);
-    Serial.print("\n");
+
+    Serial.print(F("\nSymbol DateTime = "));
+    symbolsStartTime.formatStr(buf);
+    Serial.print(buf);
   }
-  
+
+  Serial.print(F("\n"));
 }
 
 //--------------------------------------------------
@@ -480,11 +480,14 @@ void printBandInfo()
 {
   Serial.print(F("\nCurrent band: Index="));
   Serial.print(currentBandIndex);
-  Serial.print(F(" mode="));
+  Serial.print(F("; mode="));
   Serial.print((int)bandParams.getJTMode());
-  Serial.print(F(" F="));
+  Serial.print(F("; F="));
   Serial.print(bandParams.approxFrequencyInMHz());
-  Serial.print(F(" MHz\n"));
+  Serial.print(F(" MHz"));
+  Serial.print(F("; RelayNumber="));
+  Serial.print(convertRFBandToFilterBand(bandParams.getBand())); // 0-means None (FILTER_BAND_None); 1-RL0; 2-RL1; 3-RL2; 4-RL3; 5-RL4; 6-RL5
+  Serial.print(F("\n"));
 }
 
 //----------------------------------------------------------
@@ -599,7 +602,7 @@ void switchToNextBandIfNeed( bool force )
     return;
     
   currentBandIndex++;
-  if( currentBandIndex >= numBandsTotal )
+  if( currentBandIndex >= NumBandsTotal )
   {
     currentBandIndex = 0;
   }
@@ -628,7 +631,7 @@ void adjustLaunchTimeIfNeed()
   unsigned long stamp = currentTime.stamp();
   stamp += trInterval * TRIntervalMultiplier; // jump to future
   stamp -= (stamp % trInterval); // round down
-  stamp += 1; // JT64,JT9,JT4,WSPR - all start at 01 second 
+  stamp += 1; // JT65,JT9,JT4,WSPR - all start at 01 second 
 
   symbolsStartTime.initFromStamp( stamp );
   pttStartTime.initFromStamp( stamp - PTTWarmupTimeInSeconds );
@@ -697,6 +700,9 @@ void activate_ptt()
 //----------------------------------------------------------
 void deactivate_ptt()
 {
+  // TODO: in some cases it is not necessary to switch relay off
+  switchRealyToBand( FILTER_BAND_None );
+  
   // turn off ptt key here
 }
 
