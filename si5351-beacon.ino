@@ -174,13 +174,13 @@ void setup() {
   pinMode(pinLED, OUTPUT);
   pinMode(pin1PPS, INPUT_PULLUP);
 
+  switchRealyToBand(FILTER_BAND_None);
   pinMode(pinBAND0, OUTPUT);
   pinMode(pinBAND1, OUTPUT);
   pinMode(pinBAND2, OUTPUT);
   pinMode(pinBAND3, OUTPUT);
   pinMode(pinBAND4, OUTPUT);
   pinMode(pinBAND5, OUTPUT);
-  switchRealyToBand(FILTER_BAND_None);
   
   
 
