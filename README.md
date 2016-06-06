@@ -44,6 +44,8 @@ setdate | update time in Ds3231 chip | setdate 2016-05-01 12:35:30
 Please configure terminal with **newline**  termination.
 Command `setdate` - in-chip datetime will be updated as soon as you hit enter.
 
+![Block diagram](https://2.bp.blogspot.com/-hdYOkN2AvIw/VybUynSdfFI/AAAAAAAAAJ8/lczwSbtwa54h3cWx3Q5UmBE4t_etAARygCLcB/s320/arduino-ds3231-si5351.png)
+
 ![Terminal example](https://3.bp.blogspot.com/-E1QhD6bWxl4/VybOqeFfsKI/AAAAAAAAAJg/3BXgIYNTHCA2YlTMp3Ox0uFHq-kiFLflQCLcB/s320/arduino-terminal.jpg)
 
 ![qrp-labs arduio shield](https://3.bp.blogspot.com/-Rw9oxR0kns4/VybUZYk75xI/AAAAAAAAAJ4/JWqDjWBB75sM4XN4ooix6PZDgHmby1rtwCLcB/s320/arduin-si5351-qrplabs.jpg)
