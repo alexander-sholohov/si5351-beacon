@@ -122,6 +122,7 @@ size_t currentBandIndex = 0; // <--- Band index at power-on in the array below (
 JTBandDescr bandDescrArray[] = {
     {Mode_JT65_B, 32, 28943, 836045, 6, 1, 441, 163840, 60} // f=144.1777 MHz; JT65B; step=5.383Hz; 2.692baud; T/R=1m
   , {Mode_WSPR2, 31, 154287, 614418, 30, 1, 12, 8192, 120} // f=28.126 MHz; WSPR2; step=1.465Hz; 1.465baud; T/R=2m};
+};
 
 //----------  End Configuration ------------------------
 
