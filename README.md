@@ -49,6 +49,7 @@ Command `setdate` - in-chip datetime will be updated as soon as you hit enter.
 ![qrp-labs arduio shield](https://3.bp.blogspot.com/-Rw9oxR0kns4/VybUZYk75xI/AAAAAAAAAJ4/JWqDjWBB75sM4XN4ooix6PZDgHmby1rtwCLcB/s320/arduin-si5351-qrplabs.jpg)
 
 After downloading, rename folder to 'si5351-beacon'. It is arduino obligatory, the folder name should have the same name as *.ino file has.
+The project was tested in Arduino 1.6.7 development environment. If you have any problems in sketch compiling please use exactly this version.
 
 
 Si5351 module, arduio-shield, LPF's, relay-switched board was purchased from http://www.qrp-labs.com  
