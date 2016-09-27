@@ -1,13 +1,13 @@
 
-#include "si5351/si5351.h"
-#include "ds3231/ds3231.h"
-#include "utils/symbol_rate.h"
-#include "utils/command_buffer.h"
-#include "jt_encoder/jt_wspr_encoder.h"
-#include "jt_encoder/jt_mock_encoder.h"
-#include "jt_encoder/jt_jt65_encoder.h"
-#include "jt_encoder/jt_iscat_encoder.h"
-#include "utils/jt_band_params.h"
+#include "src/si5351/si5351.h"
+#include "src/ds3231/ds3231.h"
+#include "src/utils/symbol_rate.h"
+#include "src/utils/command_buffer.h"
+#include "src/jt_encoder/jt_wspr_encoder.h"
+#include "src/jt_encoder/jt_mock_encoder.h"
+#include "src/jt_encoder/jt_jt65_encoder.h"
+#include "src/jt_encoder/jt_iscat_encoder.h"
+#include "src/utils/jt_band_params.h"
 
 #include <Wire.h>
 #include <avr/pgmspace.h>
