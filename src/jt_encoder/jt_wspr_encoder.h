@@ -44,6 +44,7 @@ private:
     void pack50(uint32_t n, uint32_t m, unsigned char* out);
     void encode232(const unsigned char* dat, size_t nbytes, unsigned char* symbol) const;
     void inter_mept(const unsigned char* dat, int direction, unsigned char* res) const; 
+    unsigned char interMeptMap(size_t idx) const;
     void apply_sync(const unsigned char* dat, unsigned char* res) const; 
     void make_channel_symbols(const unsigned char* dat, unsigned char* res) const;
     void internalEncodeData(const unsigned char* data, int num_bits);

@@ -351,20 +351,14 @@ void JTWSPREncoder::encode232(const unsigned char* dat, size_t nbytes, unsigned 
 
 
 //-----------------------------------------------------------------------
-void JTWSPREncoder::inter_mept(const unsigned char* dat, int direction, unsigned char* res) const
+unsigned char JTWSPREncoder::interMeptMap(size_t idx) const
 {
-
-    // Compute the interleave table using bit reversal.
-    // TODO: store the result
-
-    unsigned char table[162];
-    memset(table, 0, sizeof(table));
-    size_t k=0;
-    for(unsigned i=0; i<255; i++)
+    size_t k = 0;
+    for(unsigned i = 0; i<255; i++)
     {
         unsigned n=0;
         unsigned ii=i;
-        for(size_t j=0; j<8; j++ )
+        for(size_t j=0; j<8; j++)
         {
             n = n + n;
             if(ii & 0x1)
@@ -374,30 +368,39 @@ void JTWSPREncoder::inter_mept(const unsigned char* dat, int direction, unsigned
             ii = ii >> 1;
         }
 
-        if( n < 162 )
+        if(n < 162)
         {
-            table[k] = n;
+            if(k == idx)
+            {
+                return n;
+            }
             k += 1;
         }
     }
 
+    return 0; // never happen
+}
+
+
+//-----------------------------------------------------------------------
+void JTWSPREncoder::inter_mept(const unsigned char* dat, int direction, unsigned char* res) const
+{
     if( direction )
     {
         for(size_t i=0; i<162; i++ )
         {
-            res[ table[i] ] = dat[i];
+            res[ interMeptMap(i) ] = dat[i];
         }
     }
     else
     {
         for(size_t i=0; i<162; i++ )
         {
-            res[i] = dat[ table[i] ];
+            res[i] = dat[ interMeptMap(i) ];
         }
     }
-
-
 }
+
 
 //-----------------------------------------------------------------------
 void JTWSPREncoder::make_channel_symbols(const unsigned char* dat, unsigned char* res) const
@@ -468,20 +471,19 @@ void JTWSPREncoder::internalEncodeData(const unsigned char* data, int num_bits)
     size_t nbits = 50 + 31;
     size_t nbytes = (nbits % 8 == 0)? nbits/8 : nbits/8 + 1;
 
-    unsigned char dat[176];  // 11*8*2
+    unsigned char dat1[176];  // 11*8*2
+    unsigned char dat2[162];
 
-    memset(dat,0, sizeof(dat));
-    encode232(data, nbytes, dat);
+    memset(dat1,0, sizeof(dat1));
+    encode232(data, nbytes, dat1);
 
-    unsigned char dat_interlived[162];
+    memset(dat2,0, sizeof(dat2));
+    inter_mept(dat1, 1, dat2);
 
-    memset(dat_interlived,0, sizeof(dat_interlived));
-    inter_mept(dat, 1, dat_interlived);
-
-    unsigned char dat_channel[162];
-    make_channel_symbols(dat_interlived, dat_channel);
+    memset(dat1,0, sizeof(dat1));
+    make_channel_symbols(dat2, dat1);
     
-    store_as_internal_symbols(dat_channel); //
+    store_as_internal_symbols(dat1); //
 
     _ok = true;
     _num_symbols = 162;
