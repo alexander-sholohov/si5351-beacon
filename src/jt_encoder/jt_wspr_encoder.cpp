@@ -11,6 +11,7 @@
 #include <stdlib.h>
 
 #include "jt_wspr_encoder.h"
+#include "pack_util.h"
 
 
 #ifndef UINT32_MAX
@@ -340,9 +341,9 @@ void JTWSPREncoder::encode232(const unsigned char* dat, size_t nbytes, unsigned 
         {
             unsigned char i4 = dat[j];
             nstate = (nstate << 1) | ((i4 >> (7-i)) & 0x1);
-            symbol[k] = parity( nstate & npoly1 );
+            PackUtil::pack1b(symbol, k, parity(nstate & npoly1));
             k += 1;
-            symbol[k] = parity( nstate & npoly2 );
+            PackUtil::pack1b(symbol, k, parity(nstate & npoly2));
             k += 1;
         }
     }
@@ -389,14 +390,14 @@ void JTWSPREncoder::inter_mept(const unsigned char* dat, int direction, unsigned
     {
         for(size_t i=0; i<162; i++ )
         {
-            res[ interMeptMap(i) ] = dat[i];
+            PackUtil::pack1b(res, interMeptMap(i), PackUtil::unpack1b(dat, i) );
         }
     }
     else
     {
         for(size_t i=0; i<162; i++ )
         {
-            res[i] = dat[ interMeptMap(i) ];
+            PackUtil::pack1b(res, i, PackUtil::unpack1b(dat, interMeptMap(i)) );
         }
     }
 }
@@ -410,7 +411,8 @@ void JTWSPREncoder::make_channel_symbols(const unsigned char* dat, unsigned char
     unsigned char s=_sync[pos];
     for(size_t i=0; i<162; i++)
     {
-        res[i] = 2 * dat[i] + ((s & 0x80)? 1 : 0) ;
+        unsigned char v = 2 * PackUtil::unpack1b(dat, i) + ((s & 0x80) ? 1 : 0);
+        PackUtil::pack2b(res, i, v);
 
         s = s << 1;
         k++;
@@ -427,28 +429,10 @@ void JTWSPREncoder::make_channel_symbols(const unsigned char* dat, unsigned char
 //-----------------------------------------------------------------------
 void JTWSPREncoder::store_as_internal_symbols(const unsigned char* channel_symbols)
 {
-    size_t pos = 0;
-    unsigned char r = 0;
-    size_t k = 0;
-    for( size_t i=0; i<162; i++ )
+    for (size_t i = 0; i < 162; i++)
     {
-        r = (r << 2) | (channel_symbols[i] & 0x3);
-        k+=2;
-        if( k == 8 )
-        {
-            _internal_symbols[pos] = r;
-            pos++;
-            r = 0;
-            k = 0;
-        }
+        PackUtil::pack2b(_internal_symbols, i, PackUtil::unpack2b(channel_symbols, i));
     }
-
-    // save rest
-    if( k != 0 )
-    {
-        _internal_symbols[pos] = r << (8-k);
-    }
-
 }
 
 
@@ -456,13 +440,7 @@ void JTWSPREncoder::store_as_internal_symbols(const unsigned char* channel_symbo
 //-----------------------------------------------------------------------
 unsigned char JTWSPREncoder::get_packed_symbol( unsigned pos ) const
 {
-    size_t n = pos / 4; // 4 symbols per byte
-    size_t shift = pos % 4;
-
-    unsigned char ch = _internal_symbols[n];
-    ch = ch >> ( 6 - shift * 2 );
-    ch = ch & 0x3;
-    return ch;
+    return PackUtil::unpack2b(_internal_symbols, pos);
 }
 
 //-----------------------------------------------------------------------
@@ -471,19 +449,20 @@ void JTWSPREncoder::internalEncodeData(const unsigned char* data, int num_bits)
     size_t nbits = 50 + 31;
     size_t nbytes = (nbits % 8 == 0)? nbits/8 : nbits/8 + 1;
 
-    unsigned char dat1[176];  // 11*8*2
-    unsigned char dat2[162];
+    unsigned char dat1[176 / 4];  // 11*8*2
+    unsigned char dat2[162 / 8 + 1];
+
 
     memset(dat1,0, sizeof(dat1));
-    encode232(data, nbytes, dat1);
+    encode232(data, nbytes, dat1);  // 11bytes -> 176 bits  (1bit)
 
     memset(dat2,0, sizeof(dat2));
-    inter_mept(dat1, 1, dat2);
+    inter_mept(dat1, 1, dat2);  // 162bits (1bit) -> 162bits (1bit)
 
     memset(dat1,0, sizeof(dat1));
-    make_channel_symbols(dat2, dat1);
+    make_channel_symbols(dat2, dat1);  //162bits (1bit) -> 162bits (2bit)
     
-    store_as_internal_symbols(dat1); //
+    store_as_internal_symbols(dat1); // 162bits (2bit) -> 162bits (2bit) 
 
     _ok = true;
     _num_symbols = 162;
