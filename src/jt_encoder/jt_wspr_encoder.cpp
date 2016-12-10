@@ -129,7 +129,7 @@ uint32_t JTWSPREncoder::packcall( const char* callsign ) const
 {
     size_t len = strlen(callsign);
     if( len > 6 )
-        return false;
+        return UINT32_MAX;
 
     uint32_t nbase = (uint32_t)37 * 36 * 10 * 27 * 27 * 27;
 
@@ -210,7 +210,7 @@ uint32_t JTWSPREncoder::packcall( const char* callsign ) const
         return UINT32_MAX;
     if( !(INRANGE(lcallsign[4], 'A', 'Z') || EXACT(lcallsign[4], ' ') ) )
         return UINT32_MAX;
-    if( !(INRANGE(lcallsign[4], 'A', 'Z') || EXACT(lcallsign[4], ' ') ) )
+    if( !(INRANGE(lcallsign[5], 'A', 'Z') || EXACT(lcallsign[5], ' ') ) )
         return UINT32_MAX;
 
     // extra validation
