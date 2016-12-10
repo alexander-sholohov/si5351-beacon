@@ -180,7 +180,10 @@ uint32_t JTWSPREncoder::packcall( const char* callsign ) const
         if( lcallsign[5] == ' ' )
         {
             // move right
-            memcpy(&lcallsign[1], &lcallsign[0], 5);
+            for( int i=5; i>0; i-- )
+            {
+                lcallsign[i] = lcallsign[i-1];
+            }
             lcallsign[0] = ' ';
         }
         else
