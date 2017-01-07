@@ -23,6 +23,8 @@ To configure base frequency, step of FSK manipulation, T/R interval, mode - plea
 
 The WSPR beacon message in defined directly  in the code in text form. Please use command-line utilities _jt65code_, _jt4code_,  _jt9code_ to generate symbol stream for these modes.
 
+Updated at Jenuary 2017. Experimental feature: GPS module instead of DS3231. Please see macros TIME_SLICE_GPS/TIME_SLICE_DS3231 in si5351-beacon.ino file.
+
 Terminal commands:
 
 Command | Description | Example
