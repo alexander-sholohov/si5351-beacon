@@ -1,4 +1,9 @@
 #pragma once
+//
+// Author: Alexander Sholohov <ra9yer@yahoo.com>
+//
+// License: MIT
+//
 
 #include "time_slice_base.h"
 #include "gps_data_extract.h"

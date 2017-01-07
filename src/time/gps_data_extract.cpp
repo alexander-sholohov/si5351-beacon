@@ -1,3 +1,9 @@
+//
+// Author: Alexander Sholohov <ra9yer@yahoo.com>
+//
+// License: MIT
+//
+
 #include "gps_data_extract.h"
 #include <Arduino.h>
 
@@ -102,7 +108,7 @@ void GpsDataExtract::onCharReceived(char ch)
             m_state = stWaitLine;
             return;
         }
-        
+
         m_datetime[m_pos] = ch;
         m_pos++;
         if( m_pos == 6 )

@@ -1,3 +1,8 @@
+//
+// Author: Alexander Sholohov <ra9yer@yahoo.com>
+//
+// License: MIT
+//
 
 #include "time_slice_ds3231.h"
 #include "ds3231.h"

@@ -1,4 +1,9 @@
 #pragma once
+//
+// Author: Alexander Sholohov <ra9yer@yahoo.com>
+//
+// License: MIT
+//
 
 class Stream;
 

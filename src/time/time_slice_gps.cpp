@@ -1,3 +1,8 @@
+//
+// Author: Alexander Sholohov <ra9yer@yahoo.com>
+//
+// License: MIT
+//
 #include "time_slice_gps.h"
 #include "rtc_datetime.h"
 #include <Stream.h>
