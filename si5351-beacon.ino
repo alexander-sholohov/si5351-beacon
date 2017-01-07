@@ -1,6 +1,6 @@
 
 #include "src/si5351/si5351.h"
-#include "src/ds3231/ds3231.h"
+#include "src/time/ds3231.h"
 #include "src/utils/symbol_rate.h"
 #include "src/utils/command_buffer.h"
 #include "src/jt_encoder/jt_wspr_encoder.h"
