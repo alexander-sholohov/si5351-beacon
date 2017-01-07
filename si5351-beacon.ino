@@ -1,5 +1,8 @@
 
 #include "src/si5351/si5351.h"
+#include "src/time/time_slice_ds3231.h"
+#include "src/time/time_slice_gps.h"
+#include "src/time/rtc_datetime.h"
 #include "src/time/ds3231.h"
 #include "src/utils/symbol_rate.h"
 #include "src/utils/command_buffer.h"
@@ -47,6 +50,7 @@ RtcDatetime symbolsStartTime;
 int prev1PPS;
 int numShowTime = 0;
 int prevBand;
+bool timeValid = false;
 
 
 enum FilterBand {
@@ -71,7 +75,7 @@ struct LPF_Band_Matching
 // ---- Arduino pin configuration ---
 
 const int pinLED = LED_BUILTIN; // duplicate 1pps
-const int pin1PPS = 4; // <-- 1pps signal from ds3231
+const int pin1PPS = 4; // <-- 1pps signal from ds3231 (actual only if ds3131 is using)
 
 
 // Active LOW relay pins as on QRP-LABS relay-switched LPF kit
@@ -129,6 +133,28 @@ JTBandDescr bandDescrArray[] = {
 const size_t NumBandsTotal = sizeof(bandDescrArray) / sizeof(bandDescrArray[0]); // Calc number of bands at compile time. Used for band hopping.
 
 
+// ---------- Time Source Configuration. Either GPS module or DS3231.
+// 
+// Here you need to select either DS3231 or GPS module. Please comment one and leave another one uncommented.
+//
+//#define TIME_SLICE_GPS
+#define TIME_SLICE_DS3231
+
+
+#if (!defined(TIME_SLICE_GPS) && !defined(TIME_SLICE_DS3231)) || (defined(TIME_SLICE_GPS) && defined(TIME_SLICE_DS3231))
+#error "Please define either TIME_SLICE_GPS or TIME_SLICE_DS3131"
+#endif
+
+#if defined(TIME_SLICE_GPS)
+HardwareSerial& gpsSerial = Serial1; // <--- Specify serial port for GPS NMEA module here
+TimeSliceGPS timeSlice(gpsSerial);
+#endif
+
+#if defined(TIME_SLICE_DS3231)
+TimeSliceDS3231 timeSlice(pin1PPS);
+#endif
+
+
 // ------ Message initialize functions ----- 
 
 //--------------------------------------------------
@@ -172,8 +198,11 @@ void setup() {
   Serial.begin(9600);
   Wire.begin();
 
+#ifdef TIME_SLICE_GPS
+  gpsSerial.begin(9600);
+#endif
+
   pinMode(pinLED, OUTPUT);
-  pinMode(pin1PPS, INPUT_PULLUP);
 
   switchRealyToBand(FILTER_BAND_None);
   pinMode(pinBAND0, OUTPUT);
@@ -184,8 +213,7 @@ void setup() {
   pinMode(pinBAND5, OUTPUT);
   
   
-
-  Ds3231::enable1PPS(true);
+  timeSlice.initialize();
   
   si5351.initialize();
   si5351.enableOutput(Si5351::OUT_0, false);
@@ -199,8 +227,6 @@ void setup() {
   currentBandIndex = (currentBandIndex < NumBandsTotal)? currentBandIndex : 0;
   bandParams.initFromJTBandDescr( bandDescrArray[currentBandIndex] ); 
   printBandInfo();
-
-  adjustLaunchTimeIfNeed();
 
 }
 
@@ -272,9 +298,14 @@ void loop() {
   }
 
   //
+  // Give time to time-slice subsystem.
+  //
+  timeSlice.doWork();
+
+  //
   // detect next second
   //
-  int current1PPS = digitalRead(pin1PPS);
+  int current1PPS = timeSlice.get1PPS();
   digitalWrite(pinLED, current1PPS); // duplicate LED
   bool nextSecondDetected = ( prev1PPS && !current1PPS );
   prev1PPS = current1PPS;
@@ -286,13 +317,20 @@ void loop() {
     --numShowTime;
   }
 
+  // Actual when datitime is not valid from the beginning.
+  if( nextSecondDetected && !timeValid )
+  {
+    timeValid = true;
+    adjustLaunchTimeIfNeed();
+  }
+  
   //
   // actions when next second event is detected
   //
   if( nextSecondDetected &&  (currentState == stateWaitStart || currentState == statePTTActive) )
   {
     RtcDatetime currentTime;
-    Ds3231::getTime(currentTime);
+    timeSlice.getTime(currentTime);
 
     if( currentState == stateWaitStart && currentTime >= pttStartTime )
     {
@@ -457,7 +495,7 @@ void printTime(bool includeLaunchTime)
   char buf[20];
 
   RtcDatetime time;
-  Ds3231::getTime(time);
+  timeSlice.getTime(time);
   Serial.print(F("\nClock  DateTime = "));
   time.formatStr(buf);
   Serial.print(buf);
@@ -622,9 +660,9 @@ void adjustLaunchTimeIfNeed()
   }
   
   RtcDatetime currentTime;
-  if( Ds3231::getTime(currentTime) != Ds3231::rcSuccess )
+  if( !timeSlice.getTime(currentTime) )
   {
-    Serial.print(F("\nUnable to initialize ds3231"));
+    Serial.print(F("\ngetTime error"));
     currentState = stateIdle;
   }
   

@@ -21,6 +21,7 @@ public:
     void reset();
     unsigned long stamp() const;
     void initFromStamp( unsigned long stamp );
+    void initFromShortString( const char* buf );
     long subtractFrom( const RtcDatetime &other ) const;
     bool isEqualTo( const RtcDatetime &other ) const;
     bool lessThan( const RtcDatetime &other ) const;

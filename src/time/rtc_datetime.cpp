@@ -6,6 +6,7 @@
 
 #include "rtc_datetime.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 const unsigned char RtcDatetime::_daysInMonth[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
@@ -111,6 +112,21 @@ void RtcDatetime::initFromStamp(unsigned long stamp)
     second = (numSeconds % 3600) % 60;
 }
 
+
+//---------------------------------------------------------------------------------
+void RtcDatetime::initFromShortString( const char* buf )
+{
+    unsigned* arr[] = {&year, &month, &day, &hour, &minute, &second};
+    char tmp[3];
+    for( size_t idx=0; idx<6; idx++ )
+    {
+        tmp[0] = buf[idx*2];
+        tmp[1] = buf[idx*2+1];
+        tmp[2] = 0;
+        *(arr[idx]) = atoi(tmp);
+    }
+
+}
 
 //---------------------------------------------------------------------------------
 long RtcDatetime::subtractFrom(RtcDatetime const& other) const
