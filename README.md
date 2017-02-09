@@ -58,5 +58,6 @@ Si5351 module, arduio-shield, LPF's, relay-switched board was purchased from htt
 Ds3231 module - from aliexpress.  
 Arduino Leonardo - from local shop.  
 
-Link to blog post: http://ra9yer.blogspot.com/2016/05/arduino-si5351-beacon.html
+Link to blog post: http://ra9yer.blogspot.com/2016/05/arduino-si5351-beacon.html  
+Link to forum thread http://forum.22dx.ru/viewtopic.php?f=15&t=152  
 
