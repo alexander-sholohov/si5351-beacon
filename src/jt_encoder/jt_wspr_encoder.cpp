@@ -279,10 +279,10 @@ int JTWSPREncoder::packgrid( const char* grid ) const
     // validation
     size_t len = strlen(grid);
     if( len!=4 )
-        return UINT32_MAX;
+        return -1;
 
     if( !(INRANGE(grid[0], 'A', 'R') ) )
-        return UINT32_MAX;
+        return -1;
     if( !(INRANGE(grid[1], 'A', 'R') ) )
         return -1;
     if( !(INRANGE(grid[2], '0', '9') ) )
