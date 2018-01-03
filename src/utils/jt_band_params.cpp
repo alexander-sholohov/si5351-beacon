@@ -57,6 +57,9 @@ unsigned JTBandParams::approxFrequencyInMHz() const
 //--------------------------------------------------------------------------------
 unsigned long JTBandParams::getFrequencyInKHz() const
 {
+    if(_pll_c==0 || _msync_div==0 || _r_div==0)
+        return 0;
+
     unsigned long xtalFreq = XTAL_FREQUENCY_IN_KHZ;
     unsigned long m = 1000;
     unsigned long f = m * _pll_b / _pll_c;
