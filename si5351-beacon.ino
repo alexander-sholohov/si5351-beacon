@@ -11,6 +11,7 @@
 #include "src/jt_encoder/jt_jt65_encoder.h"
 #include "src/jt_encoder/jt_iscat_encoder.h"
 #include "src/utils/jt_band_params.h"
+#include "src/morse/morse.h"
 
 #include <Wire.h>
 #include <avr/pgmspace.h>
@@ -20,6 +21,7 @@
 Si5351 si5351(0);
 SymbolRate symbolRate;
 CCommandBuffer commandBuffer;
+CMorse morse;
 
 JTEncodeBase::iterator itSymbol;
 JTEncodeBase::iterator itEnd;
@@ -125,6 +127,7 @@ size_t currentBandIndex = 0; // <--- Band index at power-on in the array below (
 
 JTBandDescr bandDescrArray[] = {
     {Mode_JT65_B, 32, 28943, 836045, 6, 1, 441, 163840, 60} // f=144.1777 MHz; JT65B; step=5.383Hz; 2.692baud; T/R=1m
+  , {Mode_Morse, 0, 0, 0, 0, 0, 0, 0, 60} // Morse
   , {Mode_WSPR2, 31, 154287, 614418, 30, 1, 12, 8192, 120} // f=28.126 MHz; WSPR2; step=1.465Hz; 1.465baud; T/R=2m};
 };
 
@@ -188,6 +191,11 @@ void initializeJT4Coder()
   initCoderFromProgmemArray( jt4Coder, MSG_JT4, sizeof(MSG_JT4), 2 );
 }
 
+//--------------------------------------------------
+void initializeMorse()
+{
+  morse.setText("VVV SOME TEXT IN UPPERCASE"); // <---- place your text here
+}
 
 //==============================
 
@@ -223,6 +231,7 @@ void setup() {
   initializeJT65Coder();
   initializeJT9Coder();
   initializeJT4Coder();
+  initializeMorse();
 
   currentBandIndex = (currentBandIndex < NumBandsTotal)? currentBandIndex : 0;
   bandParams.initFromJTBandDescr( bandDescrArray[currentBandIndex] ); 
@@ -250,51 +259,82 @@ void loop() {
   }
 
   //
+  // We give CPU time to Morse subsystem.
+  //
+  morse.handleTimeout();
+
+  //
   // sending symbols
   //
   if( currentState == stateTransmitting )
   {
-    unsigned currentSymbolIndex = symbolRate.currentSymbolIndex();
-  
-    if( currentSymbolIndex != prevSymbolIndex )
+    if( bandParams.getJTMode() == Mode_Morse )
     {
-      unsigned tmpIndex = prevSymbolIndex;
-      // Step to next symbol.
-      // In some very rarely case we may skip a few symbols bacause symboldIndex is more relevant parameter.
-      while( tmpIndex < currentSymbolIndex )
-      {
-        if( itSymbol != itEnd )
-        {
-          ++itSymbol;
-        }
-        ++tmpIndex;
-      }
+      // --- Morse processing branch ---
 
-      if( itSymbol != itEnd )
+      if( morse.isTransmittingActive() )
       {
-        unsigned char currentSymbolValue = *itSymbol;
-        if( prevSymbolValue != currentSymbolValue )
-        {
-          setSymbol( currentSymbolValue );
-        }
-        prevSymbolValue = currentSymbolValue;
+        // if transmitting is active we handle CW on/off
+        bool toneOn = morse.isToneActive();
 
-        if( currentSymbolIndex % 5 == 0 )
-        {
-          // just to view progress
-          Serial.println(currentSymbolIndex);
-        }
+        // LED duplicate
+        // digitalWrite(pinLED, (toneOn)? HIGH : LOW );
+
       }
       else
       {
-        Serial.println(F("Done"));
+        Serial.println(F("Morse Done"));
         stop_tx();
         switchToNextBandIfNeed(false);
         adjustLaunchTimeIfNeed();
       }
 
     }
-    prevSymbolIndex = currentSymbolIndex;
+    else
+    {
+      // --- JT processing branch ---
+      unsigned currentSymbolIndex = symbolRate.currentSymbolIndex();
+    
+      if( currentSymbolIndex != prevSymbolIndex )
+      {
+        unsigned tmpIndex = prevSymbolIndex;
+        // Step to next symbol.
+        // In some very rarely case we may skip a few symbols bacause symboldIndex is more relevant parameter.
+        while( tmpIndex < currentSymbolIndex )
+        {
+          if( itSymbol != itEnd )
+          {
+            ++itSymbol;
+          }
+          ++tmpIndex;
+        }
+
+        if( itSymbol != itEnd )
+        {
+          unsigned char currentSymbolValue = *itSymbol;
+          if( prevSymbolValue != currentSymbolValue )
+          {
+            setSymbol( currentSymbolValue );
+          }
+          prevSymbolValue = currentSymbolValue;
+
+          if( currentSymbolIndex % 5 == 0 )
+          {
+            // just to view progress
+            Serial.println(currentSymbolIndex);
+          }
+        }
+        else
+        {
+          Serial.println(F("Done"));
+          stop_tx();
+          switchToNextBandIfNeed(false);
+          adjustLaunchTimeIfNeed();
+        }
+
+      }
+      prevSymbolIndex = currentSymbolIndex;
+    }
   }
 
   //
@@ -546,6 +586,13 @@ void start_tx()
   Serial.println(F("Started"));
   printBandInfo();
 
+  if( bandParams.getJTMode() == Mode_Morse )
+  {
+    // start Morse subsystem and return
+    morse.start();
+    return;
+  }
+
   switch( bandParams.getJTMode() )
   {
     case Mode_WSPR2:
@@ -630,6 +677,7 @@ void stop_tx()
 {
   Serial.println(F("Stopped"));
   si5351.enableOutput(Si5351::OUT_0, false);
+  morse.stop();
   deactivate_ptt();
 }
 

@@ -38,7 +38,10 @@ enum JTMode
 
     Mode_JT6M = 20,
     Mode_ISCAT_A = 21,
-    Mode_ISCAT_B = 22
+    Mode_ISCAT_B = 22,
+
+    Mode_Morse = 30,
+
 };
 
 
