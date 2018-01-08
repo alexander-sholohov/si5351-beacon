@@ -19,7 +19,7 @@
 
 // ---------------- Global Variables -----------------
 
-Si5351 si5351(0);
+// Si5351 si5351(0);
 SymbolRate symbolRate;
 CCommandBuffer commandBuffer;
 CMorse morse;
@@ -232,8 +232,8 @@ void setup() {
   
   timeSlice.initialize();
   
-  si5351.initialize();
-  si5351.enableOutput(Si5351::OUT_0, false);
+  // si5351.initialize();
+  // si5351.enableOutput(Si5351::OUT_0, false);
   ad9833.initialize();
   ad9833.setFrequencyInHZx100(600200);
 
@@ -587,7 +587,7 @@ void setSymbol(unsigned symbol)
   uint32_t b;
   uint32_t c;
   bandParams.getPLLParamsForSymbol(symbol, a, b, c);
-  si5351.setupPLLParams(Si5351::PLL_A, a, b, c);
+  // si5351.setupPLLParams(Si5351::PLL_A, a, b, c);
 }
 
 
@@ -667,7 +667,7 @@ void start_tx()
   }
 
 
-  si5351.setupMultisyncParams(Si5351::OUT_0, bandParams.getMsyncDiv(), bandParams.getRDiv() );
+  // si5351.setupMultisyncParams(Si5351::OUT_0, bandParams.getMsyncDiv(), bandParams.getRDiv() );
   
   unsigned char currentSymbolValue = *itSymbol;         
   setSymbol( currentSymbolValue );
@@ -680,14 +680,14 @@ void start_tx()
   symbolRate.initFromParams( bandParams.getBaudRateDividend(), bandParams.getBaudRateDivisor() );
   symbolRate.resetToNow();
   
-  si5351.enableOutput(Si5351::OUT_0, true); //
+  // si5351.enableOutput(Si5351::OUT_0, true); //
 }
 
 //----------------------------------------------------------
 void stop_tx()
 {
   Serial.println(F("Stopped"));
-  si5351.enableOutput(Si5351::OUT_0, false);
+  // si5351.enableOutput(Si5351::OUT_0, false);
   morse.stop();
   deactivate_ptt();
 }
