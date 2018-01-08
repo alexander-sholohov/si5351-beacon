@@ -12,6 +12,7 @@
 #include "src/jt_encoder/jt_iscat_encoder.h"
 #include "src/utils/jt_band_params.h"
 #include "src/morse/morse.h"
+#include "src/ad9833/ad9833.h"
 
 #include <Wire.h>
 #include <avr/pgmspace.h>
@@ -54,7 +55,6 @@ int numShowTime = 0;
 int prevBand;
 bool timeValid = false;
 
-
 enum FilterBand {
   FILTER_BAND_None = 0,
   FILTER_BAND_0,
@@ -88,6 +88,11 @@ const int pinBAND3 = 11;
 const int pinBAND4 = 12;
 const int pinBAND5 = A3;
 
+const int pinMorse = 5;
+
+const int pinFSYNC = 10;
+const int pinSCLK  = 11;
+const int pinSDATA = 12;
 
 // ----- Configure mapping: RF_Band -> Relay_switch_board_LPF  -----
 LPF_Band_Matching relaySwitchBandMatching [] = { 
@@ -100,6 +105,8 @@ LPF_Band_Matching relaySwitchBandMatching [] = {
 };
 
 const FilterBand DefaultFilterBand = FILTER_BAND_0; // default band if none of relaySwitchBandMatching[] matched.
+
+AD9833 ad9833(pinFSYNC, pinSCLK, pinSDATA);
 
 // ----------- Startup Parameters  ------------------------------
 
@@ -128,7 +135,7 @@ size_t currentBandIndex = 0; // <--- Band index at power-on in the array below (
 JTBandDescr bandDescrArray[] = {
     {Mode_JT65_B, 32, 28943, 836045, 6, 1, 441, 163840, 60} // f=144.1777 MHz; JT65B; step=5.383Hz; 2.692baud; T/R=1m
   , {Mode_Morse, 0, 0, 0, 0, 0, 0, 0, 60} // Morse
-  , {Mode_WSPR2, 31, 154287, 614418, 30, 1, 12, 8192, 120} // f=28.126 MHz; WSPR2; step=1.465Hz; 1.465baud; T/R=2m};
+  // , {Mode_WSPR2, 31, 154287, 614418, 30, 1, 12, 8192, 120} // f=28.126 MHz; WSPR2; step=1.465Hz; 1.465baud; T/R=2m};
 };
 
 //----------  End Configuration ------------------------
@@ -219,12 +226,16 @@ void setup() {
   pinMode(pinBAND3, OUTPUT);
   pinMode(pinBAND4, OUTPUT);
   pinMode(pinBAND5, OUTPUT);
+
+  pinMode(pinMorse, OUTPUT);
   
   
   timeSlice.initialize();
   
   si5351.initialize();
   si5351.enableOutput(Si5351::OUT_0, false);
+  ad9833.initialize();
+  ad9833.setFrequencyInHZx100(600200);
 
   initializeWSPRCoder();
   initializeISCATCoder();
@@ -278,7 +289,7 @@ void loop() {
         bool toneOn = morse.isToneActive();
 
         // LED duplicate
-        // digitalWrite(pinLED, (toneOn)? HIGH : LOW );
+        digitalWrite(pinMorse, (toneOn)? HIGH : LOW );
 
       }
       else
