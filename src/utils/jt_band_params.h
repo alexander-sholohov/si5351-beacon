@@ -81,6 +81,7 @@ public:
     unsigned approxFrequencyInMHz() const;
     unsigned long getFrequencyInKHz() const;
     RF_Band getBand() const;
+    uint32_t getStepInHZx1000() const;
 
 private:
     uint16_t _jt_mode;

@@ -146,3 +146,95 @@ JTMode JTBandParams::getJTMode() const
 {
     return static_cast<JTMode>( _jt_mode );
 }
+
+//--------------------------------------------------------------------------------
+uint32_t JTBandParams::getStepInHZx1000() const
+{
+    uint32_t step = 0;
+    switch( getJTMode() )
+    {
+        case Mode_Unknown:
+            step = 0;
+            break;
+        case Mode_WSPR2:
+            step = 1465;
+            break;
+        case Mode_WSPR15:
+            step = 183;
+            break;
+
+        case Mode_JT65_A:
+            step = 2692;
+            break;
+        case Mode_JT65_B:
+            step = 5383;
+            break;
+        case Mode_JT65_C:
+            step = 10766;
+            break;
+        case Mode_JT65_B2:
+            step = 5383;
+            break;
+        case Mode_JT65_C2:
+            step = 10766;
+            break;
+
+        case Mode_JT9_1:
+            step = 1736;
+            break;
+        case Mode_JT9_2:
+            step = 781;
+            break;
+        case Mode_JT9_5 :
+            step = 293;
+            break;
+        case Mode_JT9_10 :
+            step = 148;
+            break;
+        case Mode_JT9_30 :
+            step = 48;
+            break;
+
+        case Mode_JT4_A :
+            step = 4375;
+            break;
+        case Mode_JT4_B :
+            step = 8750;
+            break;
+        case Mode_JT4_C :
+            step = 17500;
+            break;
+        case Mode_JT4_D :
+            step = 39375;
+            break;
+        case Mode_JT4_E :
+            step = 78750;
+            break;
+        case Mode_JT4_F :
+            step = 157500;
+            break;
+        case Mode_JT4_G :
+            step = 315000;
+            break;
+
+        case Mode_JT6M :
+            step = 21533;
+            break;
+        case Mode_ISCAT_A :
+            step = 21533;
+            break;
+        case Mode_ISCAT_B :
+            step = 43066;
+            break;
+
+        case Mode_Morse :
+            step = 0;
+            break;
+
+        default:
+            step = 0;
+
+    }
+
+    return step;
+}
