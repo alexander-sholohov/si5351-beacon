@@ -22,7 +22,9 @@
 // Si5351 si5351(0);
 SymbolRate symbolRate;
 CCommandBuffer commandBuffer;
+
 CMorse morse;
+bool prevMorseToneActive;
 
 JTEncodeBase::iterator itSymbol;
 JTEncodeBase::iterator itEnd;
@@ -88,11 +90,11 @@ const int pin1PPS = 4; // <-- 1pps signal from ds3231 (actual only if ds3131 is 
 // const int pinBAND4 = 12;
 // const int pinBAND5 = A3;
 
-const int pinMorse = 5;
+const int pinMorse = 8;
 
-const int pinFSYNC = 10;
-const int pinSCLK  = 11;
-const int pinSDATA = 12;
+const int pinFSYNC = 5;
+const int pinSCLK  = 6;
+const int pinSDATA = 7;
 
 // ----- Configure mapping: RF_Band -> Relay_switch_board_LPF  -----
 LPF_Band_Matching relaySwitchBandMatching [] = { 
@@ -107,6 +109,10 @@ LPF_Band_Matching relaySwitchBandMatching [] = {
 const FilterBand DefaultFilterBand = FILTER_BAND_0; // default band if none of relaySwitchBandMatching[] matched.
 
 AD9833 ad9833(pinFSYNC, pinSCLK, pinSDATA);
+
+const long MORSE_UNIT_DURATION_IN_MS = 120;
+const uint32_t MORSE_TONE_IN_HZ = 600;
+const uint32_t JT_BASE_TONE_IN_HZ = 600;
 
 // ----------- Startup Parameters  ------------------------------
 
@@ -133,7 +139,7 @@ size_t currentBandIndex = 0; // <--- Band index at power-on in the array below (
 //
 
 JTBandDescr bandDescrArray[] = {
-    {Mode_JT65_B, 32, 28943, 836045, 6, 1, 441, 163840, 60} // f=144.1777 MHz; JT65B; step=5.383Hz; 2.692baud; T/R=1m
+   {Mode_JT65_B, 32, 28943, 836045, 6, 1, 441, 163840, 60} // f=144.1777 MHz; JT65B; step=5.383Hz; 2.692baud; T/R=1m
   , {Mode_Morse, 0, 0, 0, 0, 0, 0, 0, 60} // Morse
   // , {Mode_WSPR2, 31, 154287, 614418, 30, 1, 12, 8192, 120} // f=28.126 MHz; WSPR2; step=1.465Hz; 1.465baud; T/R=2m};
 };
@@ -227,15 +233,19 @@ void setup() {
 //  pinMode(pinBAND4, OUTPUT);
 //  pinMode(pinBAND5, OUTPUT);
 
-  pinMode(pinMorse, OUTPUT);
-  
-  
   timeSlice.initialize();
   
   // si5351.initialize();
   // si5351.enableOutput(Si5351::OUT_0, false);
+
+  pinMode(pinFSYNC, OUTPUT);
+  pinMode(pinSCLK, OUTPUT);
+  pinMode(pinSDATA, OUTPUT);
   ad9833.initialize();
-  ad9833.setFrequencyInHZx100(600200);
+  
+  pinMode(pinMorse, OUTPUT);
+  digitalWrite(pinMode, LOW);
+  morse.setUnitDurationInMs( MORSE_UNIT_DURATION_IN_MS );
 
   initializeWSPRCoder();
   initializeISCATCoder();
@@ -287,6 +297,15 @@ void loop() {
       {
         // if transmitting is active we handle CW on/off
         bool toneOn = morse.isToneActive();
+        if( prevMorseToneActive != toneOn )
+        {
+          if( toneOn ) {
+            ad9833.enableOutput();
+          } else {
+            ad9833.disableOutput();
+          }
+          prevMorseToneActive = toneOn;
+        }
 
         // LED duplicate
         digitalWrite(pinMorse, (toneOn)? HIGH : LOW );
@@ -583,11 +602,13 @@ void printBandInfo()
 //----------------------------------------------------------
 void setSymbol(unsigned symbol)
 {
-  uint16_t a;
-  uint32_t b;
-  uint32_t c;
-  bandParams.getPLLParamsForSymbol(symbol, a, b, c);
+  // uint16_t a;
+  // uint32_t b;
+  // uint32_t c;
+  // bandParams.getPLLParamsForSymbol(symbol, a, b, c);
   // si5351.setupPLLParams(Si5351::PLL_A, a, b, c);
+
+  ad9833.setFrequencyInHZx100( JT_BASE_TONE_IN_HZ * 100 + bandParams.getStepInHZx1000() * symbol / 10 );
 }
 
 
@@ -601,6 +622,14 @@ void start_tx()
   {
     // start Morse subsystem and return
     morse.start();
+    ad9833.setFrequencyInHZx100(static_cast<uint32_t>(MORSE_TONE_IN_HZ) * 100);
+    if( morse.isToneActive() ) {
+      ad9833.enableOutput();
+      prevMorseToneActive = true;
+    } else {
+      ad9833.disableOutput();
+      prevMorseToneActive = false;
+    }
     return;
   }
 
@@ -681,6 +710,9 @@ void start_tx()
   symbolRate.resetToNow();
   
   // si5351.enableOutput(Si5351::OUT_0, true); //
+  
+  ad9833.enableOutput();
+
 }
 
 //----------------------------------------------------------
@@ -688,6 +720,7 @@ void stop_tx()
 {
   Serial.println(F("Stopped"));
   // si5351.enableOutput(Si5351::OUT_0, false);
+  ad9833.disableOutput();
   morse.stop();
   deactivate_ptt();
 }
