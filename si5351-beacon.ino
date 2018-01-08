@@ -80,13 +80,13 @@ const int pinLED = LED_BUILTIN; // duplicate 1pps
 const int pin1PPS = 4; // <-- 1pps signal from ds3231 (actual only if ds3131 is using)
 
 
-// Active LOW relay pins as on QRP-LABS relay-switched LPF kit
-const int pinBAND0 = 7;
-const int pinBAND1 = A0;
-const int pinBAND2 = 10;
-const int pinBAND3 = 11;
-const int pinBAND4 = 12;
-const int pinBAND5 = A3;
+// // Active LOW relay pins as on QRP-LABS relay-switched LPF kit
+// const int pinBAND0 = 7;
+// const int pinBAND1 = A0;
+// const int pinBAND2 = 10;
+// const int pinBAND3 = 11;
+// const int pinBAND4 = 12;
+// const int pinBAND5 = A3;
 
 const int pinMorse = 5;
 
@@ -220,12 +220,12 @@ void setup() {
   pinMode(pinLED, OUTPUT);
 
   switchRealyToBand(FILTER_BAND_None);
-  pinMode(pinBAND0, OUTPUT);
-  pinMode(pinBAND1, OUTPUT);
-  pinMode(pinBAND2, OUTPUT);
-  pinMode(pinBAND3, OUTPUT);
-  pinMode(pinBAND4, OUTPUT);
-  pinMode(pinBAND5, OUTPUT);
+//  pinMode(pinBAND0, OUTPUT);
+//  pinMode(pinBAND1, OUTPUT);
+//  pinMode(pinBAND2, OUTPUT);
+//  pinMode(pinBAND3, OUTPUT);
+//  pinMode(pinBAND4, OUTPUT);
+//  pinMode(pinBAND5, OUTPUT);
 
   pinMode(pinMorse, OUTPUT);
   
@@ -745,21 +745,21 @@ void switchRealyToBand(FilterBand band)
 {
   // Activate specified relay. Debounce-free solution.
   
-  // --- Turn ALL relays off, but not specified.
-  if( band != FILTER_BAND_0 ) { digitalWrite(pinBAND0, HIGH); }
-  if( band != FILTER_BAND_1 ) { digitalWrite(pinBAND1, HIGH); }
-  if( band != FILTER_BAND_2 ) { digitalWrite(pinBAND2, HIGH); }
-  if( band != FILTER_BAND_3 ) { digitalWrite(pinBAND3, HIGH); }
-  if( band != FILTER_BAND_4 ) { digitalWrite(pinBAND4, HIGH); }
-  if( band != FILTER_BAND_5 ) { digitalWrite(pinBAND5, HIGH); }
-  
-  // --- Activate specified relay.
-  if( band == FILTER_BAND_0 ) { digitalWrite(pinBAND0, LOW); }
-  if( band == FILTER_BAND_1 ) { digitalWrite(pinBAND1, LOW); }
-  if( band == FILTER_BAND_2 ) { digitalWrite(pinBAND2, LOW); }
-  if( band == FILTER_BAND_3 ) { digitalWrite(pinBAND3, LOW); }
-  if( band == FILTER_BAND_4 ) { digitalWrite(pinBAND4, LOW); }
-  if( band == FILTER_BAND_5 ) { digitalWrite(pinBAND5, LOW); }
+//  // --- Turn ALL relays off, but not specified.
+//  if( band != FILTER_BAND_0 ) { digitalWrite(pinBAND0, HIGH); }
+//  if( band != FILTER_BAND_1 ) { digitalWrite(pinBAND1, HIGH); }
+//  if( band != FILTER_BAND_2 ) { digitalWrite(pinBAND2, HIGH); }
+//  if( band != FILTER_BAND_3 ) { digitalWrite(pinBAND3, HIGH); }
+//  if( band != FILTER_BAND_4 ) { digitalWrite(pinBAND4, HIGH); }
+//  if( band != FILTER_BAND_5 ) { digitalWrite(pinBAND5, HIGH); }
+//  
+//  // --- Activate specified relay.
+//  if( band == FILTER_BAND_0 ) { digitalWrite(pinBAND0, LOW); }
+//  if( band == FILTER_BAND_1 ) { digitalWrite(pinBAND1, LOW); }
+//  if( band == FILTER_BAND_2 ) { digitalWrite(pinBAND2, LOW); }
+//  if( band == FILTER_BAND_3 ) { digitalWrite(pinBAND3, LOW); }
+//  if( band == FILTER_BAND_4 ) { digitalWrite(pinBAND4, LOW); }
+//  if( band == FILTER_BAND_5 ) { digitalWrite(pinBAND5, LOW); }
     
 }
 
