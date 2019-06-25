@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include "jt_band_params.h"
 
-#define XTAL_FREQUENCY_IN_KHZ (27000)
+#define DEFAULT_XTAL_FREQUENCY_IN_KHZ (27000)
 
 //--------------------------------------------------------------------------------
 JTBandParams::JTBandParams()
@@ -20,6 +20,7 @@ JTBandParams::JTBandParams()
     , _baud_rate_dividend(1)
     , _baud_rate_divisor(1)
     , _tr_interval(0)
+    , _xtal_frequency_in_KHz(DEFAULT_XTAL_FREQUENCY_IN_KHZ)
 {
 
 }
@@ -38,6 +39,11 @@ void JTBandParams::initFromJTBandDescr(JTBandDescr& bandDescr)
     _tr_interval = bandDescr.tr_interval;
 }
 
+//--------------------------------------------------------------------------------
+void JTBandParams::setXTALFrequencyInKHz(unsigned long frequencyInKHz)
+{
+    _xtal_frequency_in_KHz = frequencyInKHz;
+}
 
 //--------------------------------------------------------------------------------
 void JTBandParams::getPLLParamsForSymbol(unsigned symbol, uint16_t& a, uint32_t& b, uint32_t& c) const
@@ -57,7 +63,7 @@ unsigned JTBandParams::approxFrequencyInMHz() const
 //--------------------------------------------------------------------------------
 unsigned long JTBandParams::getFrequencyInKHz() const
 {
-    unsigned long xtalFreq = XTAL_FREQUENCY_IN_KHZ;
+    unsigned long xtalFreq = _xtal_frequency_in_KHz;
     unsigned long m = 1000;
     unsigned long f = m * _pll_b / _pll_c;
     unsigned long res = ( xtalFreq * _pll_a + xtalFreq * f / m ) / _msync_div / _r_div ;

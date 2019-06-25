@@ -44,21 +44,21 @@ enum JTMode
 
 enum RF_Band
 {
-    RF_Band_Unknown = 0,
-    RF_Band_2200m,
-    RF_Band_600m,
-    RF_Band_160m,
-    RF_Band_80m,
-    RF_Band_60m,
-    RF_Band_40m,
-    RF_Band_30m,
-    RF_Band_20m,
-    RF_Band_17m,
-    RF_Band_15m,
-    RF_Band_12m,
-    RF_Band_10m,
-    RF_Band_6m,
-    RF_Band_2m
+    RF_Band_Unknown = 0, // 0
+    RF_Band_2200m,   // 1
+    RF_Band_600m,    // 2
+    RF_Band_160m,    // 3
+    RF_Band_80m,     // 4
+    RF_Band_60m,     // 5
+    RF_Band_40m,     // 6
+    RF_Band_30m,     // 7
+    RF_Band_20m,     // 8
+    RF_Band_17m,     // 9
+    RF_Band_15m,     // 10
+    RF_Band_12m,     // 11
+    RF_Band_10m,     // 12
+    RF_Band_6m,      // 13
+    RF_Band_2m       // 14 
 };
 
 
@@ -68,6 +68,7 @@ class JTBandParams
 public:
     JTBandParams();
     void initFromJTBandDescr(JTBandDescr& bandDescr);
+    void setXTALFrequencyInKHz(unsigned long xtalFrequencyInKHz);
     void getPLLParamsForSymbol(unsigned symbol, uint16_t& a, uint32_t& b, uint32_t& c) const;
     JTMode   getJTMode() const;
     uint16_t getMsyncDiv() const { return _msync_div; }
@@ -89,5 +90,6 @@ private:
     uint32_t _baud_rate_dividend;
     uint32_t _baud_rate_divisor;
     uint16_t _tr_interval;
+    unsigned long _xtal_frequency_in_KHz;
 
 };

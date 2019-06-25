@@ -99,6 +99,9 @@ LPF_Band_Matching relaySwitchBandMatching [] = {
 
 const FilterBand DefaultFilterBand = FILTER_BAND_0; // default band if none of relaySwitchBandMatching[] matched.
 
+// XTAL frequency is sensitive only when LPF relay board is using.
+const unsigned long xtalFrequencyInKHz = 27000;
+
 // ----------- Startup Parameters  ------------------------------
 
 const int PTTWarmupTimeInSeconds = 2; // Number of seconds prior symbols transmission. It is for activate PTT of Power Amplifer.
@@ -226,6 +229,7 @@ void setup() {
 
   currentBandIndex = (currentBandIndex < NumBandsTotal)? currentBandIndex : 0;
   bandParams.initFromJTBandDescr( bandDescrArray[currentBandIndex] ); 
+  bandParams.setXTALFrequencyInKHz( xtalFrequencyInKHz );
   printBandInfo();
 
 }
