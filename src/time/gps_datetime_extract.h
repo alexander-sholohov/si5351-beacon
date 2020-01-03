@@ -18,12 +18,12 @@ class GpsDataExtract
     };
 
 public:
-    GpsDataExtract(Stream&);
-    void doWork();
+    GpsDataExtract();
     bool isDateTimePresent() const;
     void retrieveDateTime(char* buf);
+    void onCharReceived(char ch);
+
 private:
-    Stream& m_uart;
     State m_state;
     int m_numCommas;
     int m_pos;
@@ -31,5 +31,4 @@ private:
     char m_rmc[6];
     char m_datetime[6+6];
 
-    void onCharReceived(char ch);
 };

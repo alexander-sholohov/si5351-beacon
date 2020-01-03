@@ -9,7 +9,7 @@
 
 //---------------------------------------------------------------------------------
 TimeSliceGPS::TimeSliceGPS(Stream& serial)
-    : m_gpsDataExtract(serial)
+    : m_uart(serial)
     , m_valid(false)
 {
 }
@@ -41,7 +41,15 @@ int TimeSliceGPS::get1PPS()
 //---------------------------------------------------------------------------------
 void TimeSliceGPS::doWork()
 {
-    m_gpsDataExtract.doWork();
+    while(m_uart.available())
+    {
+        char ch = m_uart.read();
+        m_gpsDataExtract.onCharReceived(ch);
+#ifdef ENABLE_MAIDENHEAD_LOCATOR
+        m_gpsLatLotExtract.onCharReceived(ch);
+#endif
+    }
+
     if( m_gpsDataExtract.isDateTimePresent() )
     {
         m_valid = true;
@@ -50,3 +58,15 @@ void TimeSliceGPS::doWork()
     }
 }
 
+#ifdef ENABLE_MAIDENHEAD_LOCATOR
+//---------------------------------------------------------------------------------
+const char* TimeSliceGPS::calcMaidenheadLocator(unsigned numChars)
+{
+    return m_gpsLatLotExtract.calcMaidenheadLocator(numChars);
+}
+
+bool TimeSliceGPS::isValidLatLonPresent() const
+{
+    return m_gpsLatLotExtract.isValidLatLonPresent();
+}
+#endif

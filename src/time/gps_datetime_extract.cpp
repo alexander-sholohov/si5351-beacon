@@ -10,23 +10,12 @@
 #define MYSWAP(A, B) do{char tmp=A; A=B; B=tmp;}while(0)
 
 //---------------------------------------------------------------------------------
-GpsDataExtract::GpsDataExtract(Stream& stream)
-    : m_uart(stream)
-    , m_state(stWaitLine)
+GpsDataExtract::GpsDataExtract()
+    : m_state(stWaitLine)
     , m_numCommas(0)
     , m_pos(0)
     , m_isDateTimePresent(false)
 {
-}
-
-//---------------------------------------------------------------------------------
-void GpsDataExtract::doWork()
-{
-    while(m_uart.available())
-    {
-        char ch = m_uart.read();
-        onCharReceived(ch);
-    }
 }
 
 //---------------------------------------------------------------------------------
