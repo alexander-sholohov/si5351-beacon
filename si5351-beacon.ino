@@ -151,10 +151,12 @@ const size_t NumBandsTotal = sizeof(bandDescrArray) / sizeof(bandDescrArray[0]);
 #if defined(TIME_SLICE_GPS)
 HardwareSerial& gpsSerial = Serial1; // <--- Specify serial port for GPS NMEA module here
 TimeSliceGPS timeSlice(gpsSerial);
+const bool enableReadTerminalCommands = true; // Accept commands from terminal in GPS mode. Set to "false" if  GPS' UART is equal to Terminal's UART
 #endif
 
 #if defined(TIME_SLICE_DS3231)
 TimeSliceDS3231 timeSlice(pin1PPS);
+const bool enableReadTerminalCommands = true; // Accept commands from terminal in DS3231 mode. Should be always "true".
 #endif
 
 
@@ -232,6 +234,12 @@ void setup() {
   bandParams.setXTALFrequencyInKHz( xtalFrequencyInKHz );
   printBandInfo();
 
+  if( !enableReadTerminalCommands )
+  {
+    // Show notification to user.
+    Serial.println(F("Terminal commands disabled"));
+  }
+
 }
 
 
@@ -241,7 +249,7 @@ void loop() {
   //
   // command line interface
   //
-  if( Serial.available() )
+  if( enableReadTerminalCommands && Serial.available() )
   {
     int inByte = Serial.read();
     commandBuffer.handleInputChar( inByte );
