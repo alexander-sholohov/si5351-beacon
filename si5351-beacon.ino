@@ -63,7 +63,7 @@ enum FilterBand {
   FILTER_BAND_5
 };
 
-struct LPF_Band_Matching 
+struct LPF_Band_Matching
 {
   unsigned char rfBand;
   unsigned char filterBand;
@@ -88,13 +88,13 @@ const int pinBAND5 = A3;
 
 
 // ----- Configure mapping: RF_Band -> Relay_switch_board_LPF  -----
-LPF_Band_Matching relaySwitchBandMatching [] = { 
+LPF_Band_Matching relaySwitchBandMatching [] = {
   {RF_Band_40m, FILTER_BAND_5},
   {RF_Band_30m, FILTER_BAND_3},
   {RF_Band_20m, FILTER_BAND_2},
   {RF_Band_15m, FILTER_BAND_1},
   {RF_Band_15m, FILTER_BAND_1}
-  
+
 };
 
 const FilterBand DefaultFilterBand = FILTER_BAND_0; // default band if none of relaySwitchBandMatching[] matched.
@@ -122,7 +122,7 @@ size_t currentBandIndex = 0; // <--- Band index at power-on in the array below (
 
 //
 // Copy vector-descriptor from web configurator and paste into bandDescrArray.
-// Local configurator:  ./doc/band_configurator.html 
+// Local configurator:  ./doc/band_configurator.html
 // Configurator in the Net:  http://ra9yer.blogspot.com/p/si5351-configurator.html
 //
 
@@ -137,7 +137,7 @@ const size_t NumBandsTotal = sizeof(bandDescrArray) / sizeof(bandDescrArray[0]);
 
 
 // ---------- Time Source Configuration. Either GPS module or DS3231.
-// 
+//
 // Here you need to select either DS3231 or GPS module. Please comment one and leave another one uncommented.
 //
 //#define TIME_SLICE_GPS
@@ -158,7 +158,7 @@ TimeSliceDS3231 timeSlice(pin1PPS);
 #endif
 
 
-// ------ Message initialize functions ----- 
+// ------ Message initialize functions -----
 
 //--------------------------------------------------
 void initializeWSPRCoder()
@@ -214,10 +214,10 @@ void setup() {
   pinMode(pinBAND3, OUTPUT);
   pinMode(pinBAND4, OUTPUT);
   pinMode(pinBAND5, OUTPUT);
-  
-  
+
+
   timeSlice.initialize();
-  
+
   si5351.initialize();
   si5351.enableOutput(Si5351::OUT_0, false);
 
@@ -228,7 +228,7 @@ void setup() {
   initializeJT4Coder();
 
   currentBandIndex = (currentBandIndex < NumBandsTotal)? currentBandIndex : 0;
-  bandParams.initFromJTBandDescr( bandDescrArray[currentBandIndex] ); 
+  bandParams.initFromJTBandDescr( bandDescrArray[currentBandIndex] );
   bandParams.setXTALFrequencyInKHz( xtalFrequencyInKHz );
   printBandInfo();
 
@@ -259,7 +259,7 @@ void loop() {
   if( currentState == stateTransmitting )
   {
     unsigned currentSymbolIndex = symbolRate.currentSymbolIndex();
-  
+
     if( currentSymbolIndex != prevSymbolIndex )
     {
       unsigned tmpIndex = prevSymbolIndex;
@@ -327,7 +327,7 @@ void loop() {
     timeValid = true;
     adjustLaunchTimeIfNeed();
   }
-  
+
   //
   // actions when next second event is detected
   //
@@ -343,7 +343,7 @@ void loop() {
       currentState = statePTTActive;
       activate_ptt();
     }
-    
+
     if( currentState == statePTTActive && currentTime >= symbolsStartTime )
     {
       Serial.print(F("Sending data active\n"));
@@ -353,7 +353,7 @@ void loop() {
     }
   }
 
-  
+
 
 }
 
@@ -384,7 +384,7 @@ void processTerminalCommands()
       }
       params[i] = atoi(ptr);
     }
-    
+
     RtcDatetime time;
     time.second = params[5];
     time.minute = params[4];
@@ -410,7 +410,7 @@ void processTerminalCommands()
       // show time N times with 1sec interval
       numShowTime = atoi(ptr);
     }
-    
+
   }
   else if( commandBuffer.startsWith(F("start")) ) // manual start
   {
@@ -423,7 +423,7 @@ void processTerminalCommands()
     {
       Serial.println(F("unable to start when tx active"));
     }
-    
+
   }
   else if( commandBuffer.startsWith(F("stop")) )  // manual stop
   {
@@ -435,7 +435,7 @@ void processTerminalCommands()
     }
     else
     {
-      currentState = stateIdle; 
+      currentState = stateIdle;
     }
   }
   else if( commandBuffer.startsWith(F("activate")) )  // activate auto start mode
@@ -457,14 +457,14 @@ void processTerminalCommands()
     {
       currentState = stateIdle;
     }
-    
+
   }
   else if( commandBuffer.startsWith(F("si")) )  // system info
   {
     printTime(true);
     printBandInfo();
   }
-  else if( commandBuffer.startsWith(F("bhe")) ) // band hopping enable 
+  else if( commandBuffer.startsWith(F("bhe")) ) // band hopping enable
   {
     Serial.print(F("Band hopping enabled"));
     BandHoppingEnabled = true;
@@ -481,7 +481,7 @@ void processTerminalCommands()
     {
       switchToNextBandIfNeed(true);
     }
-    
+
   }
   else if( commandBuffer.startsWith(F("temperature")) )
   {
@@ -490,7 +490,7 @@ void processTerminalCommands()
     Serial.print(temperature);
     Serial.println();
   }
-  
+
 }
 
 //--------------------------------------------------
@@ -558,7 +558,7 @@ void start_tx()
       itSymbol = wsprCoder.begin();
       itEnd = wsprCoder.end();
       break;
-      
+
     case Mode_JT65_A:
     case Mode_JT65_B:
     case Mode_JT65_C:
@@ -568,7 +568,7 @@ void start_tx()
       itSymbol = jt65Coder.begin();
       itEnd = jt65Coder.end();
       break;
-      
+
     case Mode_JT9_1:
     case Mode_JT9_2:
     case Mode_JT9_5:
@@ -578,7 +578,7 @@ void start_tx()
       itSymbol = jt9Coder.begin();
       itEnd = jt9Coder.end();
       break;
-      
+
     case Mode_JT4_A:
     case Mode_JT4_B:
     case Mode_JT4_C:
@@ -614,18 +614,18 @@ void start_tx()
 
 
   si5351.setupMultisyncParams(Si5351::OUT_0, bandParams.getMsyncDiv(), bandParams.getRDiv() );
-  
-  unsigned char currentSymbolValue = *itSymbol;         
+
+  unsigned char currentSymbolValue = *itSymbol;
   setSymbol( currentSymbolValue );
-  
+
   prevSymbolValue = currentSymbolValue;
   prevSymbolIndex = 0;
-  
+
   currentState = stateTransmitting;
-  
+
   symbolRate.initFromParams( bandParams.getBaudRateDividend(), bandParams.getBaudRateDivisor() );
   symbolRate.resetToNow();
-  
+
   si5351.enableOutput(Si5351::OUT_0, true); //
 }
 
@@ -643,14 +643,14 @@ void switchToNextBandIfNeed( bool force )
 {
   if( !BandHoppingEnabled && !force )
     return;
-    
+
   currentBandIndex++;
   if( currentBandIndex >= NumBandsTotal )
   {
     currentBandIndex = 0;
   }
 
-  bandParams.initFromJTBandDescr( bandDescrArray[currentBandIndex] ); 
+  bandParams.initFromJTBandDescr( bandDescrArray[currentBandIndex] );
   printBandInfo();
 }
 
@@ -662,19 +662,19 @@ void adjustLaunchTimeIfNeed()
     currentState = stateIdle;
     return;
   }
-  
+
   RtcDatetime currentTime;
   if( !timeSlice.getTime(currentTime) )
   {
     Serial.print(F("\ngetTime error"));
     currentState = stateIdle;
   }
-  
+
   unsigned trInterval = bandParams.getTRInterval();
   unsigned long stamp = currentTime.stamp();
   stamp += trInterval * TRIntervalMultiplier; // jump to future
   stamp -= (stamp % trInterval); // round down
-  stamp += 1; // JT65,JT9,JT4,WSPR - all start at 01 second 
+  stamp += 1; // JT65,JT9,JT4,WSPR - all start at 01 second
 
   symbolsStartTime.initFromStamp( stamp );
   pttStartTime.initFromStamp( stamp - PTTWarmupTimeInSeconds );
@@ -682,14 +682,14 @@ void adjustLaunchTimeIfNeed()
   printTime(true);
 
   currentState = stateWaitStart;
-  
+
 }
 
 //----------------------------------------------------------
 void switchRealyToBand(FilterBand band)
 {
   // Activate specified relay. Debounce-free solution.
-  
+
   // --- Turn ALL relays off, but not specified.
   if( band != FILTER_BAND_0 ) { digitalWrite(pinBAND0, HIGH); }
   if( band != FILTER_BAND_1 ) { digitalWrite(pinBAND1, HIGH); }
@@ -697,7 +697,7 @@ void switchRealyToBand(FilterBand band)
   if( band != FILTER_BAND_3 ) { digitalWrite(pinBAND3, HIGH); }
   if( band != FILTER_BAND_4 ) { digitalWrite(pinBAND4, HIGH); }
   if( band != FILTER_BAND_5 ) { digitalWrite(pinBAND5, HIGH); }
-  
+
   // --- Activate specified relay.
   if( band == FILTER_BAND_0 ) { digitalWrite(pinBAND0, LOW); }
   if( band == FILTER_BAND_1 ) { digitalWrite(pinBAND1, LOW); }
@@ -705,7 +705,7 @@ void switchRealyToBand(FilterBand band)
   if( band == FILTER_BAND_3 ) { digitalWrite(pinBAND3, LOW); }
   if( band == FILTER_BAND_4 ) { digitalWrite(pinBAND4, LOW); }
   if( band == FILTER_BAND_5 ) { digitalWrite(pinBAND5, LOW); }
-    
+
 }
 
 //----------------------------------------------------------
@@ -722,7 +722,7 @@ FilterBand convertRFBandToFilterBand( RF_Band band )
     {
       filterBand = static_cast<FilterBand>(item.filterBand);
     }
-    
+
   }
 
   return filterBand;
@@ -734,10 +734,10 @@ void activate_ptt()
 {
   RF_Band rfBand = bandParams.getBand(); // gent band based on pll and multisync params
   FilterBand filterBand = convertRFBandToFilterBand(rfBand);
-  switchRealyToBand( filterBand ); // on/off appropriate relay 
+  switchRealyToBand( filterBand ); // on/off appropriate relay
 
   // turn on ptt key here, if the feature present.
-  
+
 }
 
 //----------------------------------------------------------
@@ -745,8 +745,6 @@ void deactivate_ptt()
 {
   // TODO: in some cases it is not necessary to switch relay off
   switchRealyToBand( FILTER_BAND_None );
-  
+
   // turn off ptt key here
 }
-
-
