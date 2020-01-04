@@ -151,13 +151,15 @@ const size_t NumBandsTotal = sizeof(bandDescrArray) / sizeof(bandDescrArray[0]);
 #if defined(TIME_SLICE_GPS)
 HardwareSerial& gpsSerial = Serial1; // <--- Specify serial port for GPS NMEA module here
 TimeSliceGPS timeSlice(gpsSerial);
-const bool enableReadTerminalCommands = true; // Accept commands from terminal in GPS mode. Set to "false" if  GPS' UART is equal to Terminal's UART
 #endif
 
 #if defined(TIME_SLICE_DS3231)
 TimeSliceDS3231 timeSlice(pin1PPS);
-const bool enableReadTerminalCommands = true; // Accept commands from terminal in DS3231 mode. Should be always "true".
 #endif
+
+// Enable or disable accept user's commands from terminal.
+// Should be "true". However, when GPS and Terminal share the same UART port it has to be set to "false".
+const bool enableReadTerminalCommands = true;
 
 
 // ------ Message initialize functions -----
