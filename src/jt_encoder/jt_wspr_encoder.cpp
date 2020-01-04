@@ -149,7 +149,7 @@ uint32_t JTWSPREncoder::packcall( const char* callsign ) const
     else if( !strncmp(callsign, "CQ ", 3) )
     {
         strncpy(lcallsign, callsign, len);
-        int ncall = nbase + 1;
+        uint32_t ncall = nbase + 1;
         if( lcallsign[3]>='0' && lcallsign[3]<='9'
             && lcallsign[4]>='0' && lcallsign[4]<='9'
             && lcallsign[5]>='0' && lcallsign[5]<='9' )
@@ -161,7 +161,7 @@ uint32_t JTWSPREncoder::packcall( const char* callsign ) const
     }
     else if( !strncmp(callsign, "QRZ ", 4) )
     {
-        int ncall = nbase + 2;
+        uint32_t ncall = nbase + 2;
         return ncall;
     }
     else
@@ -350,7 +350,7 @@ void JTWSPREncoder::encode232(const unsigned char* dat, size_t nbytes, unsigned 
             k += 1;
         }
     }
-    
+
 }
 
 
@@ -464,8 +464,8 @@ void JTWSPREncoder::internalEncodeData(const unsigned char* data, int num_bits)
 
     memset(dat1,0, sizeof(dat1));
     make_channel_symbols(dat2, dat1);  //162bits (1bit) -> 162bits (2bit)
-    
-    store_as_internal_symbols(dat1); // 162bits (2bit) -> 162bits (2bit) 
+
+    store_as_internal_symbols(dat1); // 162bits (2bit) -> 162bits (2bit)
 
     _ok = true;
     _num_symbols = 162;
@@ -534,7 +534,7 @@ bool JTWSPREncoder::encodeExtendedCallsign( const char* callsign, int dbm )
         return false;
 
     char lcallsign[7];
-    
+
     uint32_t res_N = 0;
     uint32_t ng = 0;
     int nadd = 0;
@@ -549,10 +549,10 @@ bool JTWSPREncoder::encodeExtendedCallsign( const char* callsign, int dbm )
 
         strncpy(lcallsign, callsign, len);
         lcallsign[len] = 0;
-        
+
 
         int n = nchar2( *(pos1+1) );
-        ng = (uint32_t)60000 - 32768 + n; // 
+        ng = (uint32_t)60000 - 32768 + n; //
 
         nadd = 1;
     }
@@ -563,7 +563,7 @@ bool JTWSPREncoder::encodeExtendedCallsign( const char* callsign, int dbm )
 
         strncpy(lcallsign, callsign, len);
         lcallsign[len] = 0;
-        
+
         int n = atoi( pos1 + 1 );
         ng = (uint32_t)60000 + 26 + n;
         nadd = 1;
@@ -619,4 +619,3 @@ bool JTWSPREncoder::encodeExtendedCallsign( const char* callsign, int dbm )
 
     return _ok;
 }
-
