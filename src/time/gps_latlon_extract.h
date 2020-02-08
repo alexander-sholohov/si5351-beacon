@@ -14,7 +14,9 @@ class GpsLatLonExtract
         stWaitLine,
         stWaitStatusChar,
         stGrabStatusChar,
+        stWaitLatLonInfo,
         stGrabLatLonInfo,
+        stGrabTime,
     };
 
 public:
@@ -33,7 +35,7 @@ private:
         MAX_TMP_BUFFER = 30,
         MAX_FRAC_CHARS = 5,
     };
-    char m_tmpBuf[MAX_TMP_BUFFER]; // store string like "A,4916.45000,N,12311.12000,W,"
+    char m_tmpBuf[MAX_TMP_BUFFER]; // store string like "4916.45000,N,12311.12000,W,"
 
     // ready to use data
     char m_latDegree[2]; // for latitude 2 chars +-90
@@ -47,6 +49,8 @@ private:
     char m_westOREast; // W/E
 
     char m_maidenheadLocator[11]; // AA00aa00aa + \0
+
+    void decodeLatLon();
 
 
 };

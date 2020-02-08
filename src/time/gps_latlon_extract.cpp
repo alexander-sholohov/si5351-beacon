@@ -3,7 +3,7 @@
 //
 // License: MIT
 //
-
+#include "gps_config.h"
 #include "gps_latlon_extract.h"
 
 #include <string.h>
@@ -24,26 +24,26 @@ GpsLatLonExtract::GpsLatLonExtract()
 {
 }
 
-
+#ifdef USE_GPRMC
 //---------------------------------------------------------------------------------
 void GpsLatLonExtract::onCharReceived(char ch)
 {
-    for(size_t idx=1; idx<6; idx++)
+    for(size_t idx = 1; idx < 6; idx++)
     {
-        m_rmc[idx-1] = m_rmc[idx];
+        m_rmc[idx - 1] = m_rmc[idx];
     }
     m_rmc[5] = ch;
 
-    if( strncmp(m_rmc, "$GPRMC", 6) == 0 )
+    if(strncmp( m_rmc, "$GPRMC", 6 ) == 0)
     {
         m_state = stWaitStatusChar;
         m_numCommas = 0;
         return;
     }
 
-    if( m_state == stWaitStatusChar )
+    if(m_state == stWaitStatusChar)
     {
-        if( ch == ',' )
+        if(ch == ',')
         {
             m_numCommas++;
             if(m_numCommas == 2)
@@ -53,113 +53,230 @@ void GpsLatLonExtract::onCharReceived(char ch)
             }
         }
     }
-    else if( m_state == stGrabStatusChar )
+    else if(m_state == stGrabStatusChar)
     {
         // expect active record only
-        if( ch != 'A' )
+        if(ch == 'A')
+        {
+            m_state = stWaitLatLonInfo;
+        }
+        else
         {
             // unexpected
             m_validLatLonPresent = false; // mark already catched data as no more valid
             m_state = stWaitLine;
             return;
         }
-
-        // clear tmp buffer
-        for(size_t idx = 0; idx < MAX_TMP_BUFFER; idx++)
-        {
-            m_tmpBuf[idx] = 0;
-        }
-
-        m_tmpBuf[m_pos] = ch;
-        m_pos++;
-        m_numCommas = 0;
-        m_state = stGrabLatLonInfo;
-
     }
-    else if( m_state == stGrabLatLonInfo )
+    else if(m_state == stWaitLatLonInfo)
     {
+        if(ch == ',')
+        {
+            // clear tmp buffer
+            memset( m_tmpBuf, 0, MAX_TMP_BUFFER );
+            m_pos = 0;
+            m_numCommas = 0;
+            m_state = stGrabLatLonInfo;
+        }
+        else
+        {
+            // should never happen
+            m_state = stWaitLine;
+            return;
+        }
+    }
+    else if(m_state == stGrabLatLonInfo)
+    {
+        // fill m_tmpBuf by incoming chars
+
         m_tmpBuf[m_pos] = ch;
         m_pos++;
-        if( m_pos >= MAX_TMP_BUFFER )
+        if(m_pos >= MAX_TMP_BUFFER)
         {
             // should never happen
             m_state = stWaitLine;
             return;
         }
 
-        if( ch == ',' )
+        if(ch == ',')
         {
             m_numCommas++;
         }
 
-        if( m_numCommas == 5 )
+        if(m_numCommas == 4)
         {
-            m_validLatLonPresent = false; // nonvalid so far
+            decodeLatLon();
             m_state = stWaitLine;
-
-            char latDegree[2];
-            char latMinutesInt[2];
-            char latMinutesFrac[MAX_FRAC_CHARS];
-            char northORSouth;
-
-            char lonDegree[3];
-            char lonMinutesInt[2];
-            char lonMinutesFrac[MAX_FRAC_CHARS];
-            char westOREast;
-
-
-            // Validate and catch. Buffer should look like "A,4916.45,N,12311.12,W"
-
-            size_t pos = 1; // skip A, start from comma
-            ENSURE_COMMA;
-            ENSURE_DIGIT_AND_CATCH( latDegree[0] );
-            ENSURE_DIGIT_AND_CATCH( latDegree[1] );
-            ENSURE_DIGIT_AND_CATCH( latMinutesInt[0] );
-            ENSURE_DIGIT_AND_CATCH( latMinutesInt[1] );
-            ENSURE_POINT;
-            memset( latMinutesFrac, '0', sizeof( latMinutesFrac ) );
-            for(size_t idx=0; idx<sizeof( latMinutesFrac ); idx++ )
-            {
-                if( m_tmpBuf[pos]==',' )
-                    break;
-                ENSURE_DIGIT_AND_CATCH( latMinutesFrac[idx] );
-            }
-            ENSURE_COMMA;
-            ENSURE_EITHER_AND_CATCH( 'N', 'S', northORSouth );
-            ENSURE_COMMA;
-            ENSURE_DIGIT_AND_CATCH( lonDegree[0] );
-            ENSURE_DIGIT_AND_CATCH( lonDegree[1] );
-            ENSURE_DIGIT_AND_CATCH( lonDegree[2] );
-            ENSURE_DIGIT_AND_CATCH( lonMinutesInt[0] );
-            ENSURE_DIGIT_AND_CATCH( lonMinutesInt[1] );
-            ENSURE_POINT;
-            memset( lonMinutesFrac, '0', sizeof( lonMinutesFrac ) );
-            for(size_t idx = 0; idx < sizeof( lonMinutesFrac ); idx++)
-            {
-                if( m_tmpBuf[pos] == ',' )
-                    break;
-                ENSURE_DIGIT_AND_CATCH( lonMinutesFrac[idx] );
-            }
-            ENSURE_COMMA;
-            ENSURE_EITHER_AND_CATCH( 'W', 'E', westOREast );
-
-            // copy to ready data
-            memcpy( m_latDegree, latDegree, sizeof( m_latDegree ) );
-            memcpy( m_latMinutesInt, latMinutesInt, sizeof( m_latMinutesInt ) );
-            memcpy( m_latMinutesFrac, latMinutesFrac, sizeof( m_latMinutesFrac ) );
-            m_northORSouth = northORSouth;
-
-            memcpy( m_lonDegree, lonDegree, sizeof( m_lonDegree ) );
-            memcpy( m_lonMinutesInt, lonMinutesInt, sizeof( m_lonMinutesInt ) );
-            memcpy( m_lonMinutesFrac, lonMinutesFrac, sizeof( m_lonMinutesFrac ) );
-            m_westOREast = westOREast;
-
-            // mark as valid
-            m_validLatLonPresent = true;
         }
     }
 
 }
+#endif
+
+#ifdef USE_GNGLL
+//---------------------------------------------------------------------------------
+void GpsLatLonExtract::onCharReceived( char ch )
+{
+    for(size_t idx = 1; idx < 6; idx++)
+    {
+        m_rmc[idx - 1] = m_rmc[idx];
+    }
+    m_rmc[5] = ch;
+
+    if(strncmp( m_rmc, "$GNGLL", 6 ) == 0)
+    {
+        m_state = stWaitLatLonInfo;
+        m_numCommas = 0;
+        return;
+    }
+
+    if(m_state == stWaitLatLonInfo)
+    {
+        if(ch == ',')
+        {
+            // clear tmp buffer
+            memset( m_tmpBuf, 0, MAX_TMP_BUFFER );
+            m_pos = 0;
+            m_numCommas = 0;
+            m_state = stGrabLatLonInfo;
+        }
+        else
+        {
+            // should never happen
+            m_state = stWaitLine;
+            return;
+        }
+    }
+    else if(m_state == stWaitStatusChar)
+    {
+        if(ch == ',')
+        {
+            m_numCommas++;
+            if(m_numCommas == 2)
+            {
+                m_state = stGrabStatusChar;
+                m_pos = 0;
+            }
+        }
+    }
+    else if(m_state == stGrabStatusChar)
+    {
+        // expect active record only
+        if(ch == 'A')
+        {
+            decodeLatLon();
+            m_state = stWaitLine;
+        }
+        else
+        {
+            // unexpected
+            m_validLatLonPresent = false; // mark already catched data as no more valid
+            m_state = stWaitLine;
+            return;
+        }
+    }
+    else if(m_state == stGrabTime)
+    {
+        // skip all chars just wait comma
+        if(ch == ',')
+        {
+            m_state = stGrabStatusChar;
+        }
+    }
+    else if(m_state == stGrabLatLonInfo)
+    {
+        // fill m_tmpBuf by incoming chars
+
+        m_tmpBuf[m_pos] = ch;
+        m_pos++;
+        if(m_pos >= MAX_TMP_BUFFER)
+        {
+            // should never happen
+            m_state = stWaitLine;
+            return;
+        }
+
+        if(ch == ',')
+        {
+            m_numCommas++;
+        }
+
+        if(m_numCommas == 4)
+        {
+            m_state = stGrabTime;
+            return;
+        }
+    }
+}
+#endif
+
+
+//---------------------------------------------------------------------------------
+void GpsLatLonExtract::decodeLatLon()
+{
+    m_validLatLonPresent = false; // nonvalid so far
+    m_state = stWaitLine;
+
+    char latDegree[2];
+    char latMinutesInt[2];
+    char latMinutesFrac[MAX_FRAC_CHARS];
+    char northORSouth;
+
+    char lonDegree[3];
+    char lonMinutesInt[2];
+    char lonMinutesFrac[MAX_FRAC_CHARS];
+    char westOREast;
+
+
+    // Validate and catch. Buffer should look like "4916.45,N,12311.12,W"
+
+    size_t pos = 0; // 
+    ENSURE_DIGIT_AND_CATCH( latDegree[0] );
+    ENSURE_DIGIT_AND_CATCH( latDegree[1] );
+    ENSURE_DIGIT_AND_CATCH( latMinutesInt[0] );
+    ENSURE_DIGIT_AND_CATCH( latMinutesInt[1] );
+    ENSURE_POINT;
+    memset( latMinutesFrac, '0', sizeof( latMinutesFrac ) );
+    for(size_t idx = 0; idx < sizeof( latMinutesFrac ); idx++)
+    {
+        if(m_tmpBuf[pos] == ',')
+            break;
+        ENSURE_DIGIT_AND_CATCH( latMinutesFrac[idx] );
+    }
+    ENSURE_COMMA;
+    ENSURE_EITHER_AND_CATCH( 'N', 'S', northORSouth );
+    ENSURE_COMMA;
+    ENSURE_DIGIT_AND_CATCH( lonDegree[0] );
+    ENSURE_DIGIT_AND_CATCH( lonDegree[1] );
+    ENSURE_DIGIT_AND_CATCH( lonDegree[2] );
+    ENSURE_DIGIT_AND_CATCH( lonMinutesInt[0] );
+    ENSURE_DIGIT_AND_CATCH( lonMinutesInt[1] );
+    ENSURE_POINT;
+    memset( lonMinutesFrac, '0', sizeof( lonMinutesFrac ) );
+    for(size_t idx = 0; idx < sizeof( lonMinutesFrac ); idx++)
+    {
+        if(m_tmpBuf[pos] == ',')
+            break;
+        ENSURE_DIGIT_AND_CATCH( lonMinutesFrac[idx] );
+    }
+    ENSURE_COMMA;
+    ENSURE_EITHER_AND_CATCH( 'W', 'E', westOREast );
+
+    // copy to ready data
+    memcpy( m_latDegree, latDegree, sizeof( m_latDegree ) );
+    memcpy( m_latMinutesInt, latMinutesInt, sizeof( m_latMinutesInt ) );
+    memcpy( m_latMinutesFrac, latMinutesFrac, sizeof( m_latMinutesFrac ) );
+    m_northORSouth = northORSouth;
+
+    memcpy( m_lonDegree, lonDegree, sizeof( m_lonDegree ) );
+    memcpy( m_lonMinutesInt, lonMinutesInt, sizeof( m_lonMinutesInt ) );
+    memcpy( m_lonMinutesFrac, lonMinutesFrac, sizeof( m_lonMinutesFrac ) );
+    m_westOREast = westOREast;
+
+    // mark as valid
+    m_validLatLonPresent = true;
+}
+
 
 //---------------------------------------------------------------------------------
 static void hlpConvertLocation( char* dst, unsigned degree, uint32_t secondsX100, bool isLongitude, bool isNegative )
