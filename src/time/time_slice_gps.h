@@ -7,8 +7,15 @@
 
 #include "gps_config.h"
 #include "time_slice_base.h"
-#include "gps_datetime_extract.h"
-#include "gps_latlon_extract.h"
+
+#ifdef ENABLE_MAIDENHEAD_LOCATOR
+#include "gngll_latlon_extract.h"
+#include "gprmc_latlon_extract.h"
+#endif
+
+#include "gngll_datetime_extract.h"
+#include "gprmc_datetime_extract.h"
+
 #include "../utils/timerange.h"
 
 class RtcDatetime;
@@ -23,18 +30,32 @@ public:
     int get1PPS();
     void doWork();
 #ifdef ENABLE_MAIDENHEAD_LOCATOR
-    const char* calcMaidenheadLocator(unsigned numChars);
-    bool isValidLatLonPresent() const;
+    const char* calcMaidenheadLocator(unsigned numChars) { return m_gpsLatLotExtract.calcMaidenheadLocator(numChars); }
+    bool isValidLatLonPresent() const { return m_gpsLatLotExtract.isValidLatLonPresent(); }
 #endif
 
 private:
     TimeSliceGPS();
     Stream& m_uart;
-    GpsDataExtract m_gpsDataExtract;
-#ifdef ENABLE_MAIDENHEAD_LOCATOR
-    GpsLatLonExtract m_gpsLatLotExtract;
-#endif
+
+    bool m_1ppsValid;
     CTimeRange m_timer;
-    bool m_valid;
-    char m_datetime[12];
+
+    // Arduino-stype factory
+#ifdef USE_GPRMC
+    GPRMCDatetimeExtract m_gpsDatatimeExtract;
+#endif // USE_GPRMC
+#ifdef USE_GNGLL
+    GNGLLDatetimeExtract m_gpsDatatimeExtract;
+#endif // USE_GNGLL
+
+#ifdef ENABLE_MAIDENHEAD_LOCATOR
+#ifdef USE_GPRMC
+    GPRMCLatLonExtract m_gpsLatLotExtract;
+#endif // USE_GPRMC
+#ifdef USE_GNGLL
+    GNGLLLatLonExtract m_gpsLatLotExtract;
+#endif // USE_GNGLL
+#endif // ENABLE_MAIDENHEAD_LOCATOR
+
 };

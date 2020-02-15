@@ -6,36 +6,28 @@
 //
 
 
-class Stream;
-
-class GpsLatLonExtract
+class GpsLatLonExtractBase
 {
-    enum State {
-        stWaitLine,
-        stWaitStatusChar,
-        stGrabStatusChar,
-        stWaitLatLonInfo,
-        stGrabLatLonInfo,
-        stGrabTime,
-    };
 
 public:
-    GpsLatLonExtract();
+    GpsLatLonExtractBase();
     bool isValidLatLonPresent() const { return m_validLatLonPresent; }
     const char *calcMaidenheadLocator(unsigned numChars);
-    void onCharReceived(char ch);
+    virtual void onCharReceived(char ch) = 0;
 
-private:
-    State m_state;
-    int m_numCommas;
-    int m_pos;
-    bool m_validLatLonPresent;
-    char m_rmc[6];
+protected:
     enum {
         MAX_TMP_BUFFER = 30,
         MAX_FRAC_CHARS = 5,
     };
     char m_tmpBuf[MAX_TMP_BUFFER]; // store string like "4916.45000,N,12311.12000,W,"
+
+    void decodeLatLon();
+    void invalidate();
+
+private:
+    bool m_validLatLonPresent;
+    char m_maidenheadLocator[11]; // AA00aa00aa + \0
 
     // ready to use data
     char m_latDegree[2]; // for latitude 2 chars +-90
@@ -47,10 +39,5 @@ private:
     char m_lonMinutesInt[2]; // 00-59
     char m_lonMinutesFrac[MAX_FRAC_CHARS]; // 00000-99999
     char m_westOREast; // W/E
-
-    char m_maidenheadLocator[11]; // AA00aa00aa + \0
-
-    void decodeLatLon();
-
 
 };

@@ -10,7 +10,7 @@
 //---------------------------------------------------------------------------------
 TimeSliceGPS::TimeSliceGPS(Stream& serial)
     : m_uart(serial)
-    , m_valid(false)
+    , m_1ppsValid(false)
 {
 }
 
@@ -22,18 +22,22 @@ void TimeSliceGPS::initialize()
 //---------------------------------------------------------------------------------
 bool TimeSliceGPS::getTime(RtcDatetime& outTime)
 {
-    if( m_valid )
-    {
-        outTime.initFromShortString(m_datetime);
-    }
+    if (!m_gpsDatatimeExtract.isDateTimePresent())
+        return false;
 
-    return m_valid;
+    outTime.initFromShortString(m_gpsDatatimeExtract.getDateTimeAsShortString());
+
+    return true;
 }
 
 //---------------------------------------------------------------------------------
 int TimeSliceGPS::get1PPS()
 {
-    int v = (m_valid && m_timer.millisecondsElapsed() < 500)? 0 : 1;
+    // emulate 1pps signal using m_timer and event logic.
+    // 000 ms - 499 ms - 0
+    // 500 ms - 999+ ms - 1
+
+    int v = (m_1ppsValid && m_timer.millisecondsElapsed() < 500)? 0 : 1;
     return v;
 }
 
@@ -41,32 +45,30 @@ int TimeSliceGPS::get1PPS()
 //---------------------------------------------------------------------------------
 void TimeSliceGPS::doWork()
 {
-    while(m_uart.available())
+    while (m_uart.available())
     {
         char ch = m_uart.read();
-        m_gpsDataExtract.onCharReceived(ch);
+        m_gpsDatatimeExtract.onCharReceived(ch);
 #ifdef ENABLE_MAIDENHEAD_LOCATOR
         m_gpsLatLotExtract.onCharReceived(ch);
 #endif
     }
 
-    if( m_gpsDataExtract.isDateTimePresent() )
+    // We expect event raises every second, not faster!!!
+    if (m_gpsDatatimeExtract.isEventPresent())
     {
-        m_valid = true;
-        m_gpsDataExtract.retrieveDateTime(m_datetime);
+        m_gpsDatatimeExtract.resetEvent(); // prevent reenter
+        m_1ppsValid = true;
         m_timer.resetToNow();
     }
+    else
+    {
+        // if GPS does not provide fresh time within 2 seconds then mark as not valid.
+        if (m_1ppsValid && m_timer.millisecondsElapsed() > 2000)
+        {
+            m_1ppsValid = false;
+        }
+    }
+
 }
 
-#ifdef ENABLE_MAIDENHEAD_LOCATOR
-//---------------------------------------------------------------------------------
-const char* TimeSliceGPS::calcMaidenheadLocator(unsigned numChars)
-{
-    return m_gpsLatLotExtract.calcMaidenheadLocator(numChars);
-}
-
-bool TimeSliceGPS::isValidLatLonPresent() const
-{
-    return m_gpsLatLotExtract.isValidLatLonPresent();
-}
-#endif

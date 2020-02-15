@@ -5,10 +5,15 @@
 // License: MIT
 //
 
-class Stream;
+#include "gps_datetime_extract_base.h"
 
-class GpsDataExtract
+class GPRMCDatetimeExtract : public GpsDatetimeExtractBase
 {
+public:
+    GPRMCDatetimeExtract();
+    void onCharReceived(char ch) override;
+
+private:
     enum State {
         stWaitLine,
         stWaitTime,
@@ -17,18 +22,9 @@ class GpsDataExtract
         stGrabDate,
     };
 
-public:
-    GpsDataExtract();
-    bool isDateTimePresent() const;
-    void retrieveDateTime(char* buf);
-    void onCharReceived(char ch);
-
-private:
     State m_state;
     int m_numCommas;
     int m_pos;
-    bool m_isDateTimePresent;
     char m_rmc[6];
-    char m_datetime[6+6];
-
+    char m_tmpDatetime[6 + 6];
 };
