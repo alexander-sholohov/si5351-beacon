@@ -18,14 +18,14 @@ void CTimeRange::resetToNow()
 
 
 //--------------------------------------------------------
-long CTimeRange::millisecondsElapsed()
+long CTimeRange::millisecondsElapsed() const
 {
     unsigned long current = millis();
     return current - _stamp;
 }
 
 //--------------------------------------------------------
-long CTimeRange::secondsElapsed()
+long CTimeRange::secondsElapsed() const
 {
     return millisecondsElapsed() / 1000;
 }

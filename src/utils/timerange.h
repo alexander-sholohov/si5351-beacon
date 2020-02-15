@@ -8,8 +8,8 @@ class CTimeRange
 {
 public:
     CTimeRange();
-    long millisecondsElapsed();
-    long secondsElapsed();
+    long millisecondsElapsed() const;
+    long secondsElapsed() const;
     void resetToNow();
 private:
     unsigned long _stamp;
