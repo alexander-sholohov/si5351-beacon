@@ -150,7 +150,7 @@ const size_t NumBandsTotal = sizeof(bandDescrArray) / sizeof(bandDescrArray[0]);
 
 #if defined(TIME_SLICE_GPS)
 HardwareSerial& gpsSerial = Serial1; // <--- Specify serial port for GPS NMEA module here
-TimeSliceGPS timeSlice(gpsSerial);
+TimeSliceGPS timeSlice;
 #endif
 
 #if defined(TIME_SLICE_DS3231)
@@ -310,6 +310,19 @@ void loop() {
     }
     prevSymbolIndex = currentSymbolIndex;
   }
+
+
+  //
+  // Get char from GPS UART and send it to time-slice subsystem.
+  //
+#ifdef TIME_SLICE_GPS
+  while(gpsSerial.available())
+  {
+    char ch = gpsSerial.read();
+    timeSlice.putNMEAChar(ch);
+    // TODO: send 'ch' char to any other NMEA data consumers here.
+  }
+#endif  
 
   //
   // Give time to time-slice subsystem.

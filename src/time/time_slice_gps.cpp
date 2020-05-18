@@ -8,9 +8,8 @@
 #include <Stream.h>
 
 //---------------------------------------------------------------------------------
-TimeSliceGPS::TimeSliceGPS(Stream& serial)
-    : m_uart(serial)
-    , m_1ppsValid(false)
+TimeSliceGPS::TimeSliceGPS()
+    : m_1ppsValid(false)
 {
 }
 
@@ -41,19 +40,18 @@ int TimeSliceGPS::get1PPS()
     return v;
 }
 
+//---------------------------------------------------------------------------------
+void TimeSliceGPS::putNMEAChar(char ch)
+{
+    m_gpsDatatimeExtract.onCharReceived(ch);
+#ifdef ENABLE_MAIDENHEAD_LOCATOR
+    m_gpsLatLotExtract.onCharReceived(ch);
+#endif
+}
 
 //---------------------------------------------------------------------------------
 void TimeSliceGPS::doWork()
 {
-    while (m_uart.available())
-    {
-        char ch = m_uart.read();
-        m_gpsDatatimeExtract.onCharReceived(ch);
-#ifdef ENABLE_MAIDENHEAD_LOCATOR
-        m_gpsLatLotExtract.onCharReceived(ch);
-#endif
-    }
-
     // We expect event raises every second, not faster!!!
     if (m_gpsDatatimeExtract.isEventPresent())
     {

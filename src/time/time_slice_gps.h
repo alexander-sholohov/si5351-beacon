@@ -24,20 +24,19 @@ class Stream;
 class TimeSliceGPS : public TimeSliceBase
 {
 public:
-    TimeSliceGPS(Stream& serial);
+    TimeSliceGPS();
     void initialize();
     bool getTime(RtcDatetime& outTime);
     int get1PPS();
     void doWork();
+    void putNMEAChar(char ch);
+
 #ifdef ENABLE_MAIDENHEAD_LOCATOR
     const char* calcMaidenheadLocator(unsigned numChars) { return m_gpsLatLotExtract.calcMaidenheadLocator(numChars); }
     bool isValidLatLonPresent() const { return m_gpsLatLotExtract.isValidLatLonPresent(); }
 #endif
 
 private:
-    TimeSliceGPS();
-    Stream& m_uart;
-
     bool m_1ppsValid;
     CTimeRange m_timer;
 
