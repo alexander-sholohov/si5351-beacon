@@ -244,7 +244,7 @@ void setup() {
   ad9833.initialize();
   
   pinMode(pinMorse, OUTPUT);
-  digitalWrite(pinMode, LOW);
+  digitalWrite(pinMorse, LOW);
   morse.setUnitDurationInMs( MORSE_UNIT_DURATION_IN_MS );
 
   initializeWSPRCoder();
@@ -836,5 +836,3 @@ void deactivate_ptt()
   
   // turn off ptt key here
 }
-
-
