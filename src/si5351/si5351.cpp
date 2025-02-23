@@ -229,7 +229,7 @@ void Si5351::setupMultisyncParams(Si5351::OutPin multisyncNumber, unsigned multi
         lr = lr >> 1;
     }
 
-    uint32_t p1 = 128 * multisyncDivider - 512;
+    uint32_t p1 = (uint32_t)128 * (uint32_t)multisyncDivider - 512;
     uint32_t p2 = 0;
     uint32_t p3 = 1;
     unsigned divby4 = (multisyncDivider==4)? 3 : 0;
